@@ -57,6 +57,7 @@ def decode_segment(eg, query):
     diff = [x for x in uniques[7] if x not in uniques[1]][0]
     mappings[diff] = 'a'
 
+    # 3 of the segments have unique counts when all digits are overlaid
     seg_counts = Counter()
     for disp in eg:
         seg_counts.update(list(disp))
@@ -69,9 +70,11 @@ def decode_segment(eg, query):
 
     for c, count in seg_counts.items():
         if count == 8:
+            # Tie breaker for a and c
             if c not in mappings:
                 mappings[c] = 'c'
         elif count == 7:
+            # Tie breaker for d and g
             if c in uniques[4]:
                 mappings[c] = 'd'
             else:
