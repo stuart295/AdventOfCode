@@ -13,9 +13,6 @@ class Cube(object):
         self.depth = self.to_coords[2] - self.from_coords[2] + 1
         self.volume = self.width * self.height * self.depth
 
-    def point_inside(self, point: tuple):
-        return all(p in range(self.from_coords[i], self.to_coords[i]+1) for i, p in enumerate(point))
-
     def overlaps(self, other) -> bool:
         return all(self.from_coords[axis] <= other.to_coords[axis] and self.to_coords[axis] >= other.from_coords[axis] for axis in range(3))
 
