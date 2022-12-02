@@ -1,4 +1,6 @@
-def solve(in_path):
+
+
+def solve(path):
     pass
 
 
