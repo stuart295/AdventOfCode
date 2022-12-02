@@ -1,28 +1,30 @@
-values = {"X": 1, "Y": 2, "Z":3}
+values = {"X": 1, "Y": 2, "Z": 3}
+op_vals = {"A" : 0, "B": 1, "C": 2}
+move_map = {"X": "A", "Y": "B", "Z": "C"}
 
 lose_reactions = {"A": "Z", "B": "X", "C": "Y"}
 win_reactions = {"A": "Y", "B": "Z", "C": "X"}
 draw_reactions = {"A": "X", "B": "Y", "C": "Z"}
 
+
 def outcome(op, player):
-    if op == "A": # Rock
-        if player == "Y": return 6 # paper
-        if player == "Z": return 0 # rock
-    if op == "B": # paper
-        if player == "Z": return 6 # scissors
-        if player == "X": return 0 # rock
-    if op == "C": # scissors
-        if player == "X": return 6 # rock
-        if player == "Y": return 0 # paper
-    return 3
+    trans = move_map[player]
+    diff = op_vals[trans] - op_vals[op]
+
+    if diff == 0: return 3
+    if diff == 1 or diff == -2: return 6
+    return 0
+
 
 def solve(path):
+    print(f"{path:-^20}")
     lines = open(path).readlines()
     rounds = [x.strip().split(' ') for x in lines]
-    print(calc_score(rounds))
+    print(f"Part 1: {calc_score(rounds)}")
 
     rounds = translate(rounds)
-    print(calc_score(rounds))
+    print(f"Part 2: {calc_score(rounds)}")
+
 
 def translate(rounds):
     out = []
@@ -44,9 +46,6 @@ def calc_score(rounds):
 
     return score
 
+
 solve('sample')
 solve('input')
-
-
-
-
