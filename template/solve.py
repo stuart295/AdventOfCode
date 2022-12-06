@@ -1,17 +1,13 @@
-debug = False
+from utils.common import solve_puzzle
 
 
-def solve(path):
-    print(f"{path:-^20}")
-
-    lines = open(path).readlines()
-
+def solve(lines):
     part1 = None
-    print(f"Part 1: {part1}")
 
     part2 = None
-    print(f"Part 2: {part2}\n")
+
+    return part1, part2
 
 
-solve('sample')
-solve('input')
+debug = True
+solve_puzzle(year=2022, day=-1, solver=solve, sample_only=debug)

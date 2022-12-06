@@ -1,4 +1,5 @@
 from more_itertools import chunked
+from utils.common import solve_puzzle
 
 
 def solve_part1(lines, instr_lines):
@@ -13,17 +14,13 @@ def solve_part2(lines, instr_lines):
     return ''.join([x[-1] for x in stacks if x])
 
 
-def solve(path):
-    print(f"{path:-^20}")
-
-    lines = open(path).readlines()
+def solve(lines):
     instr_lines = [line.strip() for line in lines if line.startswith('move')]
 
     part1 = solve_part1(lines, instr_lines)
-    print(f"Part 1: {part1}")
-
     part2 = solve_part2(lines, instr_lines)
-    print(f"Part 2: {part2}\n")
+
+    return part1, part2
 
 
 def follow_instructions(instr, stacks):
@@ -85,5 +82,5 @@ def print_stacks(stacks):
     print('-' * 10)
 
 
-solve('sample')
-solve('input')
+debug = False
+solve_puzzle(year=2022, day=5, solver=solve, sample_only=debug)
