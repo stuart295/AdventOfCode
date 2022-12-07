@@ -40,11 +40,8 @@ def calc_size(G, cur_node):
     if G.nodes[cur_node]['dir']:
         for child in G.successors(cur_node):
             G.nodes[cur_node]['size'] += calc_size(G, child)
-        size = G.nodes[cur_node]['size']
-    else:
-        size = G.nodes[cur_node]['size']
 
-    return size
+    return G.nodes[cur_node]['size']
 
 
 def solve_part1(G, cur_node, max_size):
@@ -74,7 +71,6 @@ def solve(lines):
     calc_size(G, 0)
 
     part1 = solve_part1(G, 0, 100000)
-
     part2 = solve_part2(G)
 
     return part1, part2
