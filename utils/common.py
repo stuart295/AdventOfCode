@@ -1,20 +1,24 @@
 from aocd.models import Puzzle
 
 
-def solve_puzzle(year, day, solver, sample_only: bool):
+def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, data_path=None):
     puzzle = Puzzle(year=year, day=day)
 
     # Sample data
-    print(f"{'Sample':-^20}")
-    sample_solution_a, sample_solution_b = solver(puzzle.example_data.splitlines())
-    print(f"Part 1: {sample_solution_a}")
-    print(f"Part 2: {sample_solution_b}")
+    if do_sample:
+        print(f"{'Sample':-^20}")
 
-    if sample_only: return
+        data = puzzle.example_data.splitlines() if data_path is None else open(data_path).readlines()
+        sample_solution_a, sample_solution_b = solver(data)
+        print(f"Part 1: {sample_solution_a}")
+        print(f"Part 2: {sample_solution_b}")
+
+    if not do_main: return
 
     # Main input data
     print(f"{'Main input':-^20}")
-    part_1, part_2 = solver(puzzle.input_data.splitlines())
+    data = puzzle.input_data.splitlines() if data_path is None else open(data_path).readlines()
+    part_1, part_2 = solver(data)
 
     if part_1 is not None:
         print(f"Part 1: {part_1}")

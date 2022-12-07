@@ -10,4 +10,4 @@ def solve(lines):
 
 
 debug = True
-solve_puzzle(year=2022, day=7, solver=solve, do_sample=True, do_main=not debug)
+solve_puzzle(year=2022, day=8, solver=solve, do_sample=True, do_main=not debug)
