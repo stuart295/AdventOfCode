@@ -80,7 +80,7 @@ def solve(lines):
     return part1, part2
 
 
-debug = True
+debug = False
 
-solve_puzzle(year=2022, day=7, solver=solve, do_sample=True, data_path='sample')  # The API gives the wrong sample data
-solve_puzzle(year=2022, day=7, solver=solve, do_sample=False, do_main=True)
+solve_puzzle(year=2022, day=7, solver=solve, do_sample=True, do_main=not debug, sample_data_path='sample')
+

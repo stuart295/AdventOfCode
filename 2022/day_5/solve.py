@@ -83,4 +83,4 @@ def print_stacks(stacks):
 
 
 debug = False
-solve_puzzle(year=2022, day=5, solver=solve, sample_only=debug)
+solve_puzzle(year=2022, day=5, solver=solve, do_sample=True, do_main=not debug)
