@@ -31,3 +31,16 @@ def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_
         puzzle.answer_b = part_2
     else:
         print("No part 2 provided")
+
+
+def grid_offsets(diagonals=False):
+    straight_offsets = [(0, 1), (1, 0), (0, -1), (-1, 0)]
+
+    if diagonals:
+        diag_offsets = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
+        offsets = [0]*8
+        offsets[::2] = straight_offsets
+        offsets[1::2] = diag_offsets
+        return offsets
+
+    return straight_offsets

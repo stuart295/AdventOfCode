@@ -10,4 +10,5 @@ def solve(lines):
 
 
 debug = True
-solve_puzzle(year=2022, day=-1, solver=solve, do_sample=True, do_main=not debug)
+solve_puzzle(year=2022, day=-1, solver=solve, do_sample=True, do_main=False)
+# solve_puzzle(year=2022, day=-1, solver=solve, do_sample=False, do_main=True)
