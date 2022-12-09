@@ -1,12 +1,12 @@
-from utils.common import solve_puzzle, DIR_MAP
+from utils.common import solve_puzzle, DIR_MAP, clamp
 import numpy as np
 
 
-def move_tail(H, T):
+def update_knot(H, T):
     if abs(H[0] - T[0]) > 1 or abs(H[1] - T[1]) > 1:
         step = np.array((0, 0))
-        step[0] = max(-1, min(1, H[0] - T[0]))
-        step[1] = max(-1, min(1, H[1] - T[1]))
+        step[0] = clamp(H[0] - T[0], -1, 1)
+        step[1] = clamp(H[1] - T[1], -1, 1)
         return T + step
     return T
 
@@ -22,7 +22,7 @@ def move_rope(data, rope_length=2):
         for step in range(dist):
             knots[0] += offset
             for i in range(1, len(knots)):
-                knots[i] = move_tail(knots[i - 1], knots[i])
+                knots[i] = update_knot(knots[i - 1], knots[i])
             tail_positions.add(tuple(knots[-1]))
 
     return len(tail_positions)

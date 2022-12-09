@@ -52,3 +52,7 @@ def grid_offsets(diagonals=False):
         return offsets
 
     return straight_offsets
+
+
+def clamp(val, min_val, max_val):
+    return max(min(val, max_val), min_val)
