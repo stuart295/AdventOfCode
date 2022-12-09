@@ -1,4 +1,12 @@
 from aocd.models import Puzzle
+import numpy as np
+
+DIR_MAP = {
+    'R': np.array((1, 0)),
+    'L': np.array((-1, 0)),
+    'U': np.array((0, 1)),
+    'D': np.array((0, -1)),
+}
 
 
 def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_path=None, main_data_path=None):
@@ -38,7 +46,7 @@ def grid_offsets(diagonals=False):
 
     if diagonals:
         diag_offsets = [(1, 1), (1, -1), (-1, -1), (-1, 1)]
-        offsets = [0]*8
+        offsets = [0] * 8
         offsets[::2] = straight_offsets
         offsets[1::2] = diag_offsets
         return offsets
