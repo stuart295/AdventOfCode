@@ -27,29 +27,20 @@ def solve(lines):
     X = execute(lines)
 
     # Part 1
-    part1 = 0
-    for i in [20, 60, 100, 140, 180, 220]:
-        if debug: print(f"{i}: {X[i - 1] * i}")
-        part1 += X[i-1] * i
+    part1 = sum(i * X[i - 1] for i in [20, 60, 100, 140, 180, 220])
 
+    # Part 2
     w, h = 40, 6
     line = ''
 
     for i, s in enumerate(X):
-        x, y = i % w, i // w
-        sx, sy = s % w, s // w
+        x, sx = i % w, s % w
+        line += '#' if abs(x - sx) <= 1 else '.'
 
-        if abs(x-sx) <= 1:
-            line += '#'
-        else:
-            line += '.'
-
-    lines = [f"#{''.join(x)}" for x in chunked(line, w)]
+    lines = [''.join(x) for x in chunked(line, w)]
     print('\n'.join(lines))
 
-    part2 = None
-
-    return part1, part2
+    return part1, None
 
 
 debug = False
