@@ -9,7 +9,7 @@ DIR_MAP = {
 }
 
 
-def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_path=None, main_data_path=None):
+def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_path=None, main_data_path=None, submit=True):
     puzzle = Puzzle(year=year, day=day)
 
     # Sample data
@@ -30,13 +30,17 @@ def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_
 
     if part_1 is not None:
         print(f"Part 1: {part_1}")
-        puzzle.answer_a = part_1
+
+        if submit:
+            puzzle.answer_a = part_1
     else:
         print("No part 1 provided")
 
     if part_2 is not None:
         print(f"Part 2: {part_2}")
-        puzzle.answer_b = part_2
+
+        if submit:
+            puzzle.answer_b = part_2
     else:
         print("No part 2 provided")
 
@@ -53,6 +57,3 @@ def grid_offsets(diagonals=False):
 
     return straight_offsets
 
-
-def clamp(val, min_val, max_val):
-    return max(min(val, max_val), min_val)

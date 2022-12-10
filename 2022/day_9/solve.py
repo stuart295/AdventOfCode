@@ -1,12 +1,12 @@
-from utils.common import solve_puzzle, DIR_MAP, clamp
+from utils.common import solve_puzzle, DIR_MAP
 import numpy as np
 
 
 def update_knot(H, T):
     if abs(H[0] - T[0]) > 1 or abs(H[1] - T[1]) > 1:
         step = np.array((0, 0))
-        step[0] = clamp(H[0] - T[0], -1, 1)
-        step[1] = clamp(H[1] - T[1], -1, 1)
+        step[0] = np.clip(H[0] - T[0], -1, 1)
+        step[1] = np.clip(H[1] - T[1], -1, 1)
         return T + step
     return T
 
