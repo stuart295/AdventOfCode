@@ -3,7 +3,7 @@ from more_itertools import chunked
 from collections import deque
 
 
-class MultiTest:
+class MultiVal:
 
     def __init__(self, initial, tests):
         self.tests = tests
@@ -34,22 +34,19 @@ class Monke:
         self.mvals = []
 
     def set_multi_test(self, all_tests):
-        self.mvals = [MultiTest(v, all_tests) for v in self.items]
-
-    def add_item(self, item):
-        self.mvals.append(item)
+        self.mvals = [MultiVal(v, all_tests) for v in self.items]
 
     def apply_op(self, mval):
         if self.op[2] == 'old':
             mval.sqr()
             return
 
-        val2 = int(self.op[2])
+        val = int(self.op[2])
 
         if self.op[1] == '+':
-            mval.add(val2)
+            mval.add(val)
         elif self.op[1] == '*':
-            mval.mult(val2)
+            mval.mult(val)
 
     def test_worry(self, mval):
         if mval.mods[self.idx] == 0:
@@ -57,34 +54,17 @@ class Monke:
 
         return self.false_monke
 
-    def step(self, all_monkes, div_3=True):
+    def step(self, all_monkes):
         for mval in self.mvals:
             self.inspections += 1
             self.apply_op(mval)
-            # if div_3:
-            #     cur_worry = cur_worry // 3
-
             targ_monke = self.test_worry(mval)
-
-            # cur_worry = self.test + cur_worry
-            all_monkes[targ_monke].add_item(mval)
+            all_monkes[targ_monke].mvals.append(mval)
 
         self.mvals = []
 
-def solve(lines):
-    # monkes = []
-    # for data in chunked(lines, 7):
-    #     monkes.append(Monke(data))
-    #
-    # for round in range(20):
-    #     for monke in monkes:
-    #         monke.step(monkes)
-    #
-    # mb = sorted([m.inspections for m in monkes])
-    #
-    # part1 = mb[-1] * mb[-2]
 
-    # Part 2
+def solve(lines):
     monkes = []
     for i, data in enumerate(chunked(lines, 7)):
         monkes.append(Monke(data, i))
@@ -94,13 +74,10 @@ def solve(lines):
         m.set_multi_test(tests)
 
     for round in range(10000):
-    # for round in range(20):
         for monke in monkes:
-            monke.step(monkes, False)
+            monke.step(monkes)
 
     mb = sorted([m.inspections for m in monkes])
-    print(mb)
-
     part2 = mb[-1] * mb[-2]
 
     return None, part2
