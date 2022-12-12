@@ -33,5 +33,5 @@ class GridGraph:
         nx.draw(self.graph, pos=pos, with_labels=True, labels=labels)
         plt.show()
 
-    def shortest_path(self, start, end, weight_name=None):
-        return nx.astar_path(self.graph, start, end, weight = weight_name)
+    def shortest_path(self, start, end, weights=None):
+        return nx.shortest_path(self.graph, start, end, weight = weights)
