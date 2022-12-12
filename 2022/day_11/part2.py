@@ -3,22 +3,6 @@ from more_itertools import chunked
 from collections import deque
 
 
-class MultiVal:
-
-    def __init__(self, initial, tests):
-        self.tests = tests
-        self.mods = [initial % t for t in tests]
-
-    def add(self, a):
-        self.mods = [(m + a) % t for m, t in zip(self.mods, self.tests)]
-
-    def mult(self, a):
-        self.mods = [(m * a) % t for m, t in zip(self.mods, self.tests)]
-
-    def sqr(self):
-        self.mods = [(m * m) % t for m, t in zip(self.mods, self.tests)]
-
-
 class Monke:
 
     def __init__(self, lines, idx):
@@ -32,24 +16,25 @@ class Monke:
 
         self.idx = idx
         self.mvals = []
+        self.common_test = 1
 
-    def set_multi_test(self, all_tests):
-        self.mvals = [MultiVal(v, all_tests) for v in self.items]
+    def set_common_test(self, common):
+        self.common_test = common
+        self.mvals = [v % common for v in self.items]
 
     def apply_op(self, mval):
         if self.op[2] == 'old':
-            mval.sqr()
-            return
+            return (mval ** 2) % self.common_test
 
         val = int(self.op[2])
 
         if self.op[1] == '+':
-            mval.add(val)
+            return (mval + val) % self.common_test
         elif self.op[1] == '*':
-            mval.mult(val)
+            return (mval * val) % self.common_test
 
     def test_worry(self, mval):
-        if mval.mods[self.idx] == 0:
+        if mval % self.test == 0:
             return self.true_monke
 
         return self.false_monke
@@ -57,7 +42,7 @@ class Monke:
     def step(self, all_monkes):
         for mval in self.mvals:
             self.inspections += 1
-            self.apply_op(mval)
+            mval = self.apply_op(mval)
             targ_monke = self.test_worry(mval)
             all_monkes[targ_monke].mvals.append(mval)
 
@@ -69,9 +54,12 @@ def solve(lines):
     for i, data in enumerate(chunked(lines, 7)):
         monkes.append(Monke(data, i))
 
-    tests = [m.test for m in monkes]
+    common = 1
     for m in monkes:
-        m.set_multi_test(tests)
+        common *= m.test
+
+    for m in monkes:
+        m.set_common_test(common)
 
     for round in range(10000):
         for monke in monkes:
