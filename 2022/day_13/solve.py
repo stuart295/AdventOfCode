@@ -4,9 +4,7 @@ from utils.common import solve_puzzle
 import json
 
 
-def in_order(pair):
-    p1, p2 = pair
-
+def compare(p1, p2):
     if isinstance(p1, str):
         p1 = json.loads(p1)
 
@@ -15,14 +13,14 @@ def in_order(pair):
 
     for i in range(len(p1)):
         if i >= len(p2):
-            return False
+            return 1
 
         d1, d2 = p1[i], p2[i]
 
         if isinstance(d1, int):
             if isinstance(d2, int):
-                if d1 < d2: return True
-                if d2 < d1: return False
+                if d1 < d2: return -1
+                if d2 < d1: return 1
                 continue
 
             d1 = [d1]
@@ -30,15 +28,15 @@ def in_order(pair):
         if isinstance(d2, int):
             d2 = [d2]
 
-        res = in_order([d1, d2])
-        if res is None:
+        res = compare(d1, d2)
+        if res == 0:
             continue
         return res
 
     if len(p1) < len(p2):
-        return True
+        return -1
 
-    return None
+    return 0
 
 
 def solve(lines):
@@ -48,8 +46,7 @@ def solve(lines):
 
     ordered = []
     for i, pair in enumerate(pairs):
-        is_ordered = in_order(pair)
-        if is_ordered is None or is_ordered is True:
+        if compare(*pair) <= 0:
             ordered.append(i + 1)
 
     part1 = sum(ordered)
@@ -63,13 +60,7 @@ def solve(lines):
     pairs2.append(div1)
     pairs2.append(div2)
 
-    def comparitor(x1, x2):
-        is_ordered = in_order([x1, x2])
-        if is_ordered is None or is_ordered is True:
-            return -1
-        return 1
-
-    pairs2 = sorted(pairs2, key=functools.cmp_to_key(comparitor))
+    pairs2 = sorted(pairs2, key=functools.cmp_to_key(compare))
 
     i1 = pairs2.index(div1) + 1
     i2 = pairs2.index(div2) + 1
