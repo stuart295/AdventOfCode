@@ -8,31 +8,13 @@ def is_free(pt, all_rock, all_sand, floor=None):
     return pt not in all_rock and pt not in all_sand
 
 
-def simulate(rock, sandpoint):
+def simulate(rock, sandpoint, is_floor=False):
     low_rock = max(y for x, y in rock)
-    all_sand = set()
 
-    while True:
-        sx, sy = sandpoint
-
-        while True:
-            if is_free((sx, sy + 1), rock, all_sand):
-                sy += 1
-            elif is_free((sx - 1, sy + 1), rock, all_sand):
-                sx, sy = sx - 1, sy + 1
-            elif is_free((sx + 1, sy + 1), rock, all_sand):
-                sx, sy = sx + 1, sy + 1
-            else:
-                all_sand.add((sx, sy))
-                break
-
-            if sy >= low_rock:
-                return all_sand
-
-
-def simulate2(rock, sandpoint):
-    low_rock = max(y for x, y in rock)
-    floor = low_rock + 2
+    floor = None
+    if is_floor:
+        low_rock = low_rock + 2
+        floor = low_rock
 
     all_sand = set()
 
@@ -40,11 +22,11 @@ def simulate2(rock, sandpoint):
         sx, sy = sandpoint
 
         while True:
-            if is_free((sx, sy + 1), rock, all_sand, floor=floor):
+            if is_free((sx, sy + 1), rock, all_sand, floor):
                 sy += 1
-            elif is_free((sx - 1, sy + 1), rock, all_sand, floor=floor):
+            elif is_free((sx - 1, sy + 1), rock, all_sand, floor):
                 sx, sy = sx - 1, sy + 1
-            elif is_free((sx + 1, sy + 1), rock, all_sand, floor=floor):
+            elif is_free((sx + 1, sy + 1), rock, all_sand, floor):
                 sx, sy = sx + 1, sy + 1
             else:
                 all_sand.add((sx, sy))
@@ -52,8 +34,11 @@ def simulate2(rock, sandpoint):
                     return all_sand
                 break
 
+            if sy >= low_rock:
+                return all_sand
 
-def solve(lines):
+
+def load_rocks(lines):
     rock = set()
     for line in lines:
         verts = line.strip().split(' -> ')
@@ -65,13 +50,16 @@ def solve(lines):
             for x in range(min(x1, x2), max(x1, x2) + 1):
                 for y in range(min(y1, y2), max(y1, y2) + 1):
                     rock.add((x, y))
+    return rock
+
+
+def solve(lines):
+    rock = load_rocks(lines)
 
     final_sand = simulate(rock, (500, 0))
-
     part1 = len(final_sand)
 
-    final_sand_2 = simulate2(rock, (500, 0))
-
+    final_sand_2 = simulate(rock, (500, 0), is_floor=True)
     part2 = len(final_sand_2)
 
     return part1, part2
