@@ -3,7 +3,6 @@ import multiprocessing
 from utils.common import solve_puzzle, grid_offsets
 from collections import defaultdict
 from functools import lru_cache
-from scipy.spatial.distance import cityblock
 
 
 def read_data(lines):
@@ -87,6 +86,7 @@ def solve_part_2(s, sensors, dists, limit, outputs, run):
                 to_search.append(neigh)
 
 
+@lru_cache()
 def is_border(pos, s, sdist):
     outside = 0
     for x, y in grid_offsets(False):
@@ -102,6 +102,7 @@ def is_border(pos, s, sdist):
 def solve(lines):
     sensors, beacons, dists = read_data(lines)
 
+    # Part 1 - Bad code
     part1 = solve_part_1(beacons, sensors, dists, y=2000000)
 
     # Part 2 - Bad code and multiprocessing
