@@ -1,5 +1,7 @@
 import multiprocessing
 
+import numpy as np
+
 from utils.common import solve_puzzle, grid_offsets
 from collections import defaultdict
 from functools import lru_cache
@@ -55,57 +57,52 @@ def solve_part_1(beacons, sensors, dists, y):
 
 
 def solve_part_2(s, sensors, dists, limit, outputs, run):
-    searched = set()
-
     sx, sy = s
 
-    to_search = [(sx + dists[s], sy)]
+    prev_x, prev_y = grid_offsets()[-1]
+    prev_x = sx + prev_x * (dists[s] + 1)
+    prev_y = sy + prev_y * (dists[s] + 1)
 
-    while len(to_search) > 0:
+    checked = set()
+
+    for cx, cy in ((sx + x * (dists[s] + 1), sy + y * (dists[s] + 1)) for x, y in grid_offsets()):
         if not run.is_set():
+            if debug: print(f"{s}: Done", flush=True)
             return
 
-        cur = to_search.pop()
-        searched.add(cur)
+        off_x = np.clip(cx - prev_x, -1, 1)
+        off_y = np.clip(cy - prev_y, -1, 1)
+        cur_x, cur_y = prev_x, prev_y
 
-        for x, y in grid_offsets(True):
-            neigh = (cur[0] + x, cur[1] + y)
+        for _ in range(abs(prev_x - cx)):
+            if (cur_x, cur_y) not in checked:
+                checked.add((cur_x, cur_y))
 
-            nx, ny = neigh
+                if 0 <= cur_x <= limit and 0 <= cur_y <= limit:
+                    if manhatten((cur_x, cur_y), s) <= dists[s]:
+                        continue
 
-            if 0 <= nx <= limit and 0 <= ny <= limit:
-                if manhatten(neigh, s) <= dists[s]:
-                    continue
+                    if not is_sensed((cur_x, cur_y), sensors, dists):
+                        freq = 4000000 * cur_x + cur_y
+                        outputs.append(freq)
+                        run.clear()
+                        if debug: print(f"{s}: Done. Result = {freq}", flush=True)
+                        return
+            cur_x += off_x
+            cur_y += off_y
 
-                if not is_sensed(neigh, sensors, dists):
-                    outputs.append(4000000 * nx + ny)
-                    run.clear()
-                    return
+        prev_x, prev_y = cx, cy
 
-            if not neigh in searched and is_border(neigh, s, dists[s]):
-                to_search.append(neigh)
-
-
-@lru_cache()
-def is_border(pos, s, sdist):
-    outside = 0
-    for x, y in grid_offsets(False):
-        neigh = (pos[0] + x, pos[1] + y)
-        ndist = manhatten(neigh, s)
-
-        if ndist > sdist:
-            outside += 1
-
-    return 0 < outside < 4
+    if debug: print(f"{s}: Done", flush=True)
 
 
 def solve(lines):
     sensors, beacons, dists = read_data(lines)
 
-    # Part 1 - Bad code
+    # Part 1
     part1 = solve_part_1(beacons, sensors, dists, y=2000000)
 
-    # Part 2 - Bad code and multiprocessing
+    # Part 2
     limit = 4000000
     # limit = 20
 
@@ -132,6 +129,6 @@ def solve(lines):
     return part1, part2
 
 
-debug = False
+debug = True
 # solve_puzzle(year=2022, day=15, solver=solve, do_sample=True, do_main=False)
 solve_puzzle(year=2022, day=15, solver=solve, do_sample=False, do_main=True)
