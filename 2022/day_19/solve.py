@@ -1,4 +1,6 @@
 import dataclasses
+import multiprocessing
+import random
 import uuid
 from dataclasses import dataclass
 
@@ -9,7 +11,6 @@ import networkx as nx
 class Blueprint:
 
     def __init__(self, line):
-        # Blueprint 1: Each ore robot costs 3 ore. Each clay robot costs 4 ore. Each obsidian robot costs 2 ore and 20 clay. Each geode robot costs 4 ore and 7 obsidian.
         split = line.strip().replace(':', '').split(' ')
         self.id = int(split[1])
         self.ore_bot_ore_cost = int(split[6])
@@ -30,7 +31,7 @@ class State:
     clay_bots: int = 0
     obs_bots: int = 0
     geo_bots: int = 0
-    timestep :int = 24
+    timestep: int = 24
 
     def to_tuple(self):
         return (
@@ -54,148 +55,207 @@ class State:
         return self.ore >= bp.obs_bot_ore_cost and self.clay >= bp.obs_bot_clay_cost
 
     def can_build_geo_bot(self, bp: Blueprint):
-        return self.ore >= bp.geo_bot_ore_cost and self.clay >= bp.geo_bot_obs_cost
+        return self.ore >= bp.geo_bot_ore_cost and self.obs >= bp.geo_bot_obs_cost
 
 
-def add_node(G, state, bp, step):
-    # Update resources
-    # new_state = dataclasses.replace(state)
-    new_state = State(**dataclasses.asdict(state))
-    if step:
-        new_state.step()
+def build_geo_bot(state: State, bp: Blueprint):
+    state.ore -= bp.geo_bot_ore_cost
+    state.obs -= bp.geo_bot_obs_cost
+    state.geo_bots += 1
 
-    if new_state.timestep <= 0:
-        G.add_edge(new_state.to_tuple(), 'end')
-        return new_state
+
+def build_obs_bot(state: State, bp: Blueprint):
+    state.ore -= bp.obs_bot_ore_cost
+    state.clay -= bp.obs_bot_clay_cost
+    state.obs_bots += 1
+
+
+def build_clay_bot(state: State, bp: Blueprint):
+    state.ore -= bp.clay_bot_ore_cost
+    state.clay_bots += 1
+
+
+def build_ore_bot(state: State, bp: Blueprint):
+    state.ore -= bp.ore_bot_ore_cost
+    state.ore_bots += 1
+
+
+def do_nothing(state: State, bp: Blueprint):
+    pass
+
+
+# There's probably a better (mathematical) way to get this, but the day grows late...
+def geo_limit(state: State, bp: Blueprint, other_cache):
+    t = state.to_tuple()
+    if t in other_cache:
+        return other_cache[t]
+
+    temp_state = dataclasses.replace(state)
+
+    temp_state.ore_ore = temp_state.ore
+    temp_state.clay_ore = temp_state.ore
+    temp_state.obs_ore = temp_state.ore
+    temp_state.obs_clay = temp_state.clay
+    temp_state.geo_ore = temp_state.ore
+    temp_state.geo_obs = temp_state.obs
+
+    while temp_state.timestep > 0:
+        prev = dataclasses.replace(temp_state)
+        prev.ore_ore = temp_state.ore_ore
+        prev.clay_ore = temp_state.clay_ore
+        prev.obs_ore = temp_state.obs_ore
+        prev.obs_clay = temp_state.obs_clay
+        prev.geo_ore = temp_state.geo_ore
+        prev.geo_obs = temp_state.geo_obs
+
+        temp_state.step()
+        temp_state.ore_ore += temp_state.ore_bots
+        temp_state.clay_ore += temp_state.ore_bots
+        temp_state.obs_ore += temp_state.ore_bots
+        temp_state.obs_clay += temp_state.clay_bots
+        temp_state.geo_ore += temp_state.ore_bots
+        temp_state.geo_obs += temp_state.obs_bots
+
+        if prev.ore_ore >= bp.ore_bot_ore_cost:
+            temp_state.ore_ore -= bp.ore_bot_ore_cost
+            temp_state.ore_bots += 1
+
+        if prev.clay_ore >= bp.clay_bot_ore_cost:
+            temp_state.clay_ore -= bp.clay_bot_ore_cost
+            temp_state.clay_bots += 1
+
+        if prev.obs_ore >= bp.obs_bot_ore_cost and prev.obs_clay >= bp.obs_bot_clay_cost:
+            temp_state.obs_ore -= bp.obs_bot_ore_cost
+            temp_state.obs_clay -= bp.obs_bot_clay_cost
+            temp_state.obs_bots += 1
+
+        if prev.geo_ore >= bp.geo_bot_ore_cost and prev.geo_obs >= bp.geo_bot_obs_cost:
+            temp_state.geo_ore -= bp.geo_bot_ore_cost
+            temp_state.geo_obs -= bp.geo_bot_obs_cost
+            temp_state.geo_bots += 1
+
+    other_cache[t] = temp_state.geo
+    return temp_state.geo
+
+
+@dataclass
+class BestValue:
+    value: int = -1
+
+
+def get_max_geos(state, bp, all_best, cache, other_cache):
+    prev_state = dataclasses.replace(state)
+
+    state.step()
+
+    if state.timestep <= 0:
+        return state.geo
+
+    max_possible_geos = geo_limit(prev_state, bp, other_cache)
+    if max_possible_geos <= all_best.value:
+        return -1
+
+    tup = state.to_tuple()
+    if tup in cache:
+        return cache[tup]
 
     # Add actions
-    # ore bot
-    if new_state.can_build_ore_bot(bp):
-        # next_state = dataclasses.replace(new_state)
-        next_state = State(**dataclasses.asdict(new_state))
-        next_state.ore -= bp.ore_bot_ore_cost
-        next_state.ore_bots += 1
-        if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
-            G.add_edge(next_state.to_tuple(), n.to_tuple())
+    def get_actions(state):
+        actions = []
 
-    # clay bot
-    if new_state.can_build_clay_bot(bp):
-        next_state = State(**dataclasses.asdict(new_state))
-        next_state.ore -= bp.clay_bot_ore_cost
-        next_state.clay_bots += 1
-        if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
-            G.add_edge(next_state.to_tuple(), n.to_tuple())
+        if state.can_build_geo_bot(bp): actions.append(build_geo_bot)
+        if state.can_build_obs_bot(bp): actions.append(build_obs_bot)
+        if state.can_build_clay_bot(bp): actions.append(build_clay_bot)
+        if state.can_build_ore_bot(bp): actions.append(build_ore_bot)
 
-    # obs bot
-    if new_state.can_build_obs_bot(bp):
-        next_state = State(**dataclasses.asdict(new_state))
-        next_state.ore -= bp.obs_bot_ore_cost
-        next_state.clay -= bp.obs_bot_clay_cost
-        next_state.obs_bots += 1
-        if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
-            G.add_edge(next_state.to_tuple(), n.to_tuple())
+        actions.append(do_nothing)
 
-    # geo bot
-    if new_state.can_build_geo_bot(bp):
-        next_state = State(**dataclasses.asdict(new_state))
-        next_state.ore -= bp.geo_bot_ore_cost
-        next_state.obs -= bp.geo_bot_obs_cost
-        next_state.geo_bots += 1
-        if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
-            G.add_edge(next_state.to_tuple(), n.to_tuple())
+        if len(actions) > 1:
+            random.shuffle(actions)
+        return actions
 
-    # nothing
-    if not new_state.to_tuple() in G.nodes:
-        n = add_node(G, new_state, bp, True)
-        G.add_edge(new_state.to_tuple(), n.to_tuple())
+    local_best = -1
 
-    return new_state
+    for act in get_actions(prev_state):
+        # next_state = State(**dataclasses.asdict(new_state))
+        next_state = dataclasses.replace(state)
+        act(next_state, bp)
+
+        cur_best = get_max_geos(next_state, bp, all_best, cache, other_cache)
+
+        local_best = max(local_best, cur_best)
+        all_best.value = max(all_best.value, local_best)
+
+    cache[tup] = local_best
+
+    return local_best
 
 
-def build_graph(bp):
-    G = nx.DiGraph()
+def solve_single(bp, outputs, time=24, use_quality=True):
+    local_best = BestValue()
 
-    start_state = State()
+    cache = {}
+    other_cache = {}
+    start_state = State(timestep=time)
+    best = get_max_geos(start_state, bp, local_best, cache, other_cache)
+    if debug: print(f"BP {bp.id}: {best}", flush=True)
 
-    G.add_node(start_state.to_tuple(), state=start_state, time=start_state.timestep)
-    out = add_node(G, start_state, bp, True)
-    G.add_edge(start_state.to_tuple(), out.to_tuple())
+    if use_quality:
+        outputs.append(best * bp.id)
+    else:
+        outputs.append(best)
 
-    return G, start_state
+
+def solve_part_1(bps):
+    manager = multiprocessing.Manager()
+    outputs = manager.list()
+    jobs = []
+
+    for bp in bps:
+        process = multiprocessing.Process(
+            target=solve_single,
+            args=(bp, outputs)
+        )
+        jobs.append(process)
+        process.start()
+
+    for j in jobs:
+        j.join()
+
+    return sum(outputs)
 
 
-# def find_best(state, bp, time, step):
-#     # Update resources
-#     new_state = dataclasses.replace(state)
-#     if step:
-#         new_state.step()
-#
-#     if time <= 0:
-#         return
-#
-#     # Add actions
-#     # ore bot
-#     if new_state.can_build_ore_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.ore_bot_ore_cost
-#         next_state.ore_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # clay bot
-#     if new_state.can_build_clay_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.clay_bot_ore_cost
-#         next_state.clay_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # obs bot
-#     if new_state.can_build_obs_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.obs_bot_ore_cost
-#         next_state.clay -= bp.obs_bot_clay_cost
-#         next_state.obs_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # geo bot
-#     if new_state.can_build_geo_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.geo_bot_ore_cost
-#         next_state.obs -= bp.geo_bot_obs_cost
-#         next_state.geo_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # nothing
-#     add_node(G, new_state, time - 1, bp, True)
-#
-#     return guid
+def solve_part_2(bps):
+    manager = multiprocessing.Manager()
+    outputs = manager.list()
+    jobs = []
+
+    for bp in bps[:3]:
+        process = multiprocessing.Process(
+            target=solve_single,
+            args=(bp, outputs, 32, False)
+        )
+        jobs.append(process)
+        process.start()
+
+    for j in jobs:
+        j.join()
+
+    if len(outputs) >= 3:
+        return outputs[0] * outputs[1] * outputs[2]
+
+    print(f"Highest value for sample: {max(outputs)}")
+    return max(outputs)
 
 
 def solve(lines):
     bps = [Blueprint(line) for line in lines]
-
-    max_geos = []
-    quality = 0
-    for bp in bps:
-        G, start = build_graph(bp)
-        print(f"BP {bp.id}: {len(G.nodes)}", flush=True)
-        cur_max = 0
-        for node in G.nodes:
-            cur_max = max(cur_max, G.nodes[node]['state'].geo)
-
-        max_geos.append(cur_max)
-        quality += cur_max * bp.id
-
-    part1 = quality
-
-    part2 = None
+    part1 = solve_part_1(bps)
+    part2 = solve_part_2(bps)
 
     return part1, part2
 
 
-debug = True
+debug = False
 solve_puzzle(year=2022, day=19, solver=solve, do_sample=True, do_main=False, sample_data_path='sample')
-# solve_puzzle(year=2022, day=19, solver=solve, do_sample=False, do_main=True)
+solve_puzzle(year=2022, day=19, solver=solve, do_sample=False, do_main=True)
