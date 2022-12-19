@@ -2,6 +2,8 @@ import dataclasses
 import uuid
 from dataclasses import dataclass
 
+from ortools.sat.python import cp_model
+
 from utils.common import solve_puzzle
 import networkx as nx
 
@@ -30,7 +32,7 @@ class State:
     clay_bots: int = 0
     obs_bots: int = 0
     geo_bots: int = 0
-    timestep :int = 24
+    timestep: int = 24
 
     def to_tuple(self):
         return (
@@ -76,7 +78,7 @@ def add_node(G, state, bp, step):
         next_state.ore -= bp.ore_bot_ore_cost
         next_state.ore_bots += 1
         if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
+            n = add_node(G, next_state, bp, False)
             G.add_edge(next_state.to_tuple(), n.to_tuple())
 
     # clay bot
@@ -85,7 +87,7 @@ def add_node(G, state, bp, step):
         next_state.ore -= bp.clay_bot_ore_cost
         next_state.clay_bots += 1
         if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
+            n = add_node(G, next_state, bp, False)
             G.add_edge(next_state.to_tuple(), n.to_tuple())
 
     # obs bot
@@ -95,7 +97,7 @@ def add_node(G, state, bp, step):
         next_state.clay -= bp.obs_bot_clay_cost
         next_state.obs_bots += 1
         if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
+            n = add_node(G, next_state, bp, False)
             G.add_edge(next_state.to_tuple(), n.to_tuple())
 
     # geo bot
@@ -105,7 +107,7 @@ def add_node(G, state, bp, step):
         next_state.obs -= bp.geo_bot_obs_cost
         next_state.geo_bots += 1
         if not next_state.to_tuple() in G.nodes:
-            n = add_node(G, next_state, bp, True)
+            n = add_node(G, next_state, bp, False)
             G.add_edge(next_state.to_tuple(), n.to_tuple())
 
     # nothing
@@ -127,51 +129,100 @@ def build_graph(bp):
 
     return G, start_state
 
+def calc_max_ore_bots(cost, time):
+    bots = 1
+    ore = 0
+    for t in range(time):
+        ore += bots
+        while ore >= cost:
+            bots += 1
+            ore -= cost
+    return bots
 
-# def find_best(state, bp, time, step):
-#     # Update resources
-#     new_state = dataclasses.replace(state)
-#     if step:
-#         new_state.step()
-#
-#     if time <= 0:
-#         return
-#
-#     # Add actions
-#     # ore bot
-#     if new_state.can_build_ore_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.ore_bot_ore_cost
-#         next_state.ore_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # clay bot
-#     if new_state.can_build_clay_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.clay_bot_ore_cost
-#         next_state.clay_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # obs bot
-#     if new_state.can_build_obs_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.obs_bot_ore_cost
-#         next_state.clay -= bp.obs_bot_clay_cost
-#         next_state.obs_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # geo bot
-#     if new_state.can_build_geo_bot(bp):
-#         next_state = dataclasses.replace(new_state)
-#         next_state.ore -= bp.geo_bot_ore_cost
-#         next_state.obs -= bp.geo_bot_obs_cost
-#         next_state.geo_bots += 1
-#         add_node(G, next_state, time, bp, False)
-#
-#     # nothing
-#     add_node(G, new_state, time - 1, bp, True)
-#
-#     return guid
+def solve_constraints(bp: Blueprint, time: int = 24):
+    bound = 10000000000
+    # solver = pywraplp.Solver('Maximize geodes', pywraplp.Solver.GLOP_LINEAR_PROGRAMMING)
+    model = cp_model.CpModel()
+    # solver = pywraplp.Solver.CreateSolver('SCIP')
+    ore_bots = model.NewIntVar(1, time, 'ore_bots')
+    clay_bots = model.NewIntVar(0, time, 'clay_bots')
+    obs_bots = model.NewIntVar(0, time, 'obs_bots')
+    geo_bots = model.NewIntVar(0, time, 'geo_bots')
+
+    model.Add(ore_bots <= calc_max_ore_bots(bp.ore_bot_ore_cost, time))
+
+    model.Add(ore_bots + clay_bots + obs_bots + geo_bots < time)
+
+    ore = model.NewIntVar(0, bound, 'ore')
+    clay = model.NewIntVar(0, bound, 'clay')
+    obs = model.NewIntVar(0, bound, 'obs')
+    geo = model.NewIntVar(0, bound, 'geo')
+
+    # timesteps = model.NewIntVar(0, time, 'time')
+
+    max_ore = model.NewIntVar(0, bound, 'max ore')
+    max_clay = model.NewIntVar(0, bound, 'max clay')
+    max_obs = model.NewIntVar(0, bound, 'max obs')
+    max_geo = model.NewIntVar(0, bound, 'max geo')
+
+    model.AddMultiplicationEquality(max_ore, [ore_bots, time])
+    model.AddMultiplicationEquality(max_clay, [clay_bots, time])
+    model.AddMultiplicationEquality(max_obs, [obs_bots, time])
+    model.AddMultiplicationEquality(max_geo, [geo_bots, time])
+
+    model.Add(ore <= max_ore)
+    model.Add(clay <= max_clay)
+    model.Add(obs <= max_obs)
+    model.Add(geo <= max_geo)
+
+    available_ore = model.NewIntVar(0, bound, 'total ore')
+    model.Add(
+        available_ore == ore - ore_bots * bp.ore_bot_ore_cost - clay_bots * bp.clay_bot_ore_cost - obs_bots * bp.obs_bot_ore_cost - geo_bots * bp.geo_bot_ore_cost)
+
+    available_clay = model.NewIntVar(0, bound, 'total clay')
+    model.Add(available_clay == clay - obs_bots * bp.obs_bot_clay_cost)
+
+    available_obs = model.NewIntVar(0, bound, 'total obs')
+    model.Add(available_obs == obs - geo_bots * bp.geo_bot_obs_cost)
+
+    # Bot limits given resources
+    max_ore_bots = model.NewIntVar(0, bound, 'max_ore_bots')
+    model.AddDivisionEquality(max_ore_bots, available_ore, bp.ore_bot_ore_cost)
+
+    max_clay_bots = model.NewIntVar(0, bound, 'max_clay_bots')
+    model.AddDivisionEquality(max_clay_bots, available_ore, bp.clay_bot_ore_cost)
+
+    max_obs_bots_ore = model.NewIntVar(0, bound, 'max_obs_bots_ore')
+    model.AddDivisionEquality(max_obs_bots_ore, available_ore, bp.obs_bot_ore_cost)
+
+    max_obs_bots_clay = model.NewIntVar(0, bound, 'max_obs_bots_clay')
+    model.AddDivisionEquality(max_obs_bots_clay, available_clay, bp.obs_bot_clay_cost)
+
+    max_geo_bots_ore = model.NewIntVar(0, bound, 'max_geo_bots_ore')
+    model.AddDivisionEquality(max_geo_bots_ore, available_ore, bp.geo_bot_ore_cost)
+
+    max_geo_bots_obs = model.NewIntVar(0, bound, 'max_geo_bots_obs')
+    model.AddDivisionEquality(max_geo_bots_obs, available_obs, bp.geo_bot_obs_cost)
+
+    model.Add(ore_bots <= max_ore_bots)
+    model.Add(clay_bots <= max_clay_bots)
+    model.Add(obs_bots <= max_obs_bots_ore)
+    model.Add(obs_bots <= max_obs_bots_clay)
+    model.Add(geo_bots <= max_geo_bots_ore)
+    model.Add(geo_bots <= max_geo_bots_obs)
+
+    model.Maximize(geo)
+
+    solver = cp_model.CpSolver()
+    status = solver.Solve(model)
+    print(status)
+
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        print(f"Value: {solver.Value(geo)}")
+        return solver.Value(geo)
+    else:
+        print('No solution found.')
+        return -1
 
 
 def solve(lines):
@@ -180,14 +231,15 @@ def solve(lines):
     max_geos = []
     quality = 0
     for bp in bps:
-        G, start = build_graph(bp)
-        print(f"BP {bp.id}: {len(G.nodes)}", flush=True)
-        cur_max = 0
-        for node in G.nodes:
-            cur_max = max(cur_max, G.nodes[node]['state'].geo)
+        # G, start = build_graph(bp)
+        # print(f"BP {bp.id}: {len(G.nodes)}", flush=True)
+        # cur_max = 0
+        # for node in G.nodes:
+        #     cur_max = max(cur_max, G.nodes[node]['state'].geo)
+        best = solve_constraints(bp, 24)
 
-        max_geos.append(cur_max)
-        quality += cur_max * bp.id
+        max_geos.append(best)
+        quality += best * bp.id
 
     part1 = quality
 
