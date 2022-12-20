@@ -1,6 +1,6 @@
 from aocd.models import Puzzle
 import numpy as np
-import networkx as nx
+from joblib import Parallel, delayed
 
 DIR_MAP = {
     'R': np.array((1, 0)),
@@ -54,3 +54,22 @@ def grid_offsets(diagonals=False):
 
     return straight_offsets
 
+
+def grid_offsets_3d(diagonals=False):
+    for xoff, yoff in grid_offsets(diagonals):
+        yield xoff, yoff, 0
+
+        if diagonals:
+            yield xoff, yoff, 1
+            yield xoff, yoff, -1
+
+    yield 0, 0, 1
+    yield 0, 0, -1
+
+
+def jobify(func, args, share_mem=False, verbose=False):
+    return Parallel(
+        n_jobs=-1,
+        verbose=10 if verbose else 0,
+        require='sharedmem' if share_mem else None
+    )(delayed(func)(*arg) for arg in args)
