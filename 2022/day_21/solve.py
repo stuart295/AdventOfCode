@@ -9,7 +9,7 @@ class Monke:
     dep2 = None
     op = None
     target = None
-    is_hum = False
+    is_human = False
 
     def set_math(self, parts):
         self.dep1, self.op, self.dep2 = parts
@@ -42,12 +42,6 @@ class Monke:
             else:
                 return self.target * b
 
-        if self.op == '=':
-            if a is not None:
-                return a
-            else:
-                return b
-
     def find_target(self, monkes):
         if self.dep1 is None:
             self.number = self.target
@@ -59,13 +53,13 @@ class Monke:
 
         # has neither
         if monkes[self.dep1].number is None and monkes[self.dep2].number is None:
-            if monkes[self.dep1].is_hum:
+            if monkes[self.dep1].is_human:
                 return self.dep2
             return self.dep1
 
         # No target
         if self.target is None:
-            if self.is_hum:
+            if self.is_human:
                 return "Return to monke"
             return self.do_math(monkes)
 
@@ -130,8 +124,8 @@ def update_human(monke, monkes):
     if monke.dep1 is None:
         return
 
-    if monkes[monke.dep1].is_hum or monkes[monke.dep2].is_hum:
-        monke.is_hum = True
+    if monkes[monke.dep1].is_human or monkes[monke.dep2].is_human:
+        monke.is_human = True
 
 
 def solve_part_1(lines):
@@ -145,7 +139,7 @@ def solve_part_2(lines):
     monkes[me].dep1 = None
     monkes[me].dep2 = None
     monkes[me].number = None
-    monkes[me].is_hum = True
+    monkes[me].is_human = True
 
     # Solve one side
     side_val = reduce(monkes['root'].dep2, monkes)
