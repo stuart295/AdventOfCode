@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-
 from utils.common import solve_puzzle
 
 
@@ -51,7 +50,6 @@ class Monke:
 
     def find_target(self, monkes):
         if self.dep1 is None:
-            assert self.target is not None
             self.number = self.target
             return None
 
@@ -63,8 +61,6 @@ class Monke:
         if monkes[self.dep1].number is None and monkes[self.dep2].number is None:
             if monkes[self.dep1].is_hum:
                 return self.dep2
-            elif monkes[self.dep2].is_hum:
-                return "Return to monke"
             return self.dep1
 
         # No target
@@ -73,6 +69,7 @@ class Monke:
                 return "Return to monke"
             return self.do_math(monkes)
 
+        # Evaluate targets of dependants
         if monkes[self.dep1].number is None:
             monkes[self.dep1].target = self.calc_target(None, monkes[self.dep2].number)
             return self.dep1
@@ -92,21 +89,8 @@ class Monke:
 
         val2 = monkes[self.dep2].number
 
-        if self.op == '+':
-            self.number = val1 + val2
-            return None
-
-        if self.op == '*':
-            self.number = val1 * val2
-            return None
-
-        if self.op == '-':
-            self.number = val1 - val2
-            return None
-
-        if self.op == '/':
-            self.number = val1 // val2
-            return None
+        # Note: Don't try this at home
+        self.number = eval(f"{val1}{self.op}{val2}")
 
 
 def read_data(lines):
@@ -152,7 +136,7 @@ def update_human(monke, monkes):
 
 def solve_part_1(lines):
     monkes = read_data(lines)
-    return reduce('root', monkes)
+    return int(reduce('root', monkes))
 
 
 def solve_part_2(lines):
