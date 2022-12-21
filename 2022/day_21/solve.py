@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from utils.common import solve_puzzle
 
@@ -171,5 +172,6 @@ def solve(lines):
 
 
 debug = True
+
 solve_puzzle(year=2022, day=21, solver=solve, do_sample=True, do_main=False)
 solve_puzzle(year=2022, day=21, solver=solve, do_sample=False, do_main=True)
