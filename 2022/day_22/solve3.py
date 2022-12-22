@@ -19,60 +19,57 @@ def read_data(lines):
             G.graph.nodes[cur_pos]['top_edge'] = None
             G.graph.nodes[cur_pos]['bot_edge'] = None
 
-            col_min, col_max = min(i for i,c in enumerate(lines[y]) if c == '.')
+            col_min = min(i for i, c in enumerate(lines[y]) if c != ' ')
+            col_max = max(i for i, c in enumerate(lines[y]) if c != ' ')
 
-            if node['char'] == ' ':
-                empty += 1
-                continue
-
+        
             if node['char'] == '.':
                 if not start:
                     start = (x, y)
 
                 # Right edge
-                if x == G.w - 1 or G.graph.nodes[(x + 1, y)]['char'] == ' ':
-                    for tx in range(x - 1, -1, -1):
-                        if tx == 0 or ((tx, y) in G.graph.nodes and G.graph.nodes[(tx - 1, y)]['char'] == ' '):
-                            G.graph.nodes[cur_pos]['right_edge'] = (tx, y)
-                            break
+                if x == col_max and G.graph.nodes[(col_min, y)]['char'] == '.':
+                    G.graph.nodes[cur_pos]['right_edge'] = (col_min, y)
 
                 # Left edge
-                if x == 0 or G.graph.nodes[(x - 1, y)]['char'] == ' ':
-                    for tx in range(x + 1, G.w):
-                        if tx == G.w - 1 or ((tx, y) in G.graph.nodes and G.graph.nodes[(tx + 1, y)]['char'] == ' '):
-                            G.graph.nodes[cur_pos]['left_edge'] = (tx, y)
-                            break
+                if x == col_min and G.graph.nodes[(col_max, y)]['char'] == '.':
+                    G.graph.nodes[cur_pos]['left_edge'] = (col_max, y)
+
+                # if x == G.w - 1 or G.graph.nodes[(x + 1, y)]['char'] == ' ':
+                #     for tx in range(x - 1, -1, -1):
+                #         if tx == 0 or ((tx, y) in G.graph.nodes and G.graph.nodes[(tx - 1, y)]['char'] == ' '):
+                #             G.graph.nodes[cur_pos]['right_edge'] = (tx, y)
+                #             break
+
+                # Left edge
+                # if x == 0 or G.graph.nodes[(x - 1, y)]['char'] == ' ':
+                #     for tx in range(x + 1, G.w):
+                #         if tx == G.w - 1 or ((tx, y) in G.graph.nodes and G.graph.nodes[(tx + 1, y)]['char'] == ' '):
+                #             G.graph.nodes[cur_pos]['left_edge'] = (tx, y)
+                #             break
 
                 # Bottom edge
+
+                # Bot edge
                 if y == G.h - 1 or G.graph.nodes[(x, y + 1)]['char'] == ' ':
                     for ty in range(y - 1, -1, -1):
                         if ty == 0 or ((x, ty) in G.graph.nodes and G.graph.nodes[(x, ty - 1)]['char'] == ' '):
-                            G.graph.nodes[cur_pos]['bot_edge'] = (x, ty)
+                            if G.graph.nodes[(x, ty)]['char'] == '.':
+                                G.graph.nodes[cur_pos]['bot_edge'] = (x, ty)
                             break
 
                 # Top edge
                 if y == 0 or G.graph.nodes[(x, y - 1)]['char'] == ' ':
                     for ty in range(y + 1, G.h):
                         if ty == G.h - 1 or ((x, ty) in G.graph.nodes and G.graph.nodes[(x, ty + 1)]['char'] == ' '):
-                            G.graph.nodes[cur_pos]['top_edge'] = (x, ty)
+                            if G.graph.nodes[(x, ty)]['char'] == '.':
+                                G.graph.nodes[cur_pos]['top_edge'] = (x, ty)
                             break
-
-                # neigh = nx.neighbors(G.graph, cur_pos)
-                #
-                # for ox, oy in grid_offsets():
-                #     n = (x + ox, y + oy)
-                #     if
-
-                # if n in G.graph.nodes and n not in neigh and G.graph.nodes[n]['char'] == '.':
-                #     G.graph.add_edge(cur_pos, n)
-                #     if y == 0:
-                #         G.graph.nodes[cur_pos]['hor_edge'] = True
-                #     else:
-                #         G.graph.nodes[cur_pos]['vert_edge'] = True
 
             col = x - empty + 1
             row = y + 1
             node['pos'] = (row, col)
+
 
     G.set_walls(' ')
     G.set_walls('#')
@@ -148,13 +145,13 @@ def follow_instructions(instr, start, G):
                 if fx > 0 and G.graph.nodes[new_pos]['right_edge'] is not None:
                     ax = G.graph.nodes[new_pos]['right_edge'][0]
 
-                if fx < 0 and G.graph.nodes[new_pos]['left_edge'] is not None:
+                elif fx < 0 and G.graph.nodes[new_pos]['left_edge'] is not None:
                     ax = G.graph.nodes[new_pos]['left_edge'][0]
 
-                if fy > 0 and G.graph.nodes[new_pos]['bot_edge'] is not None:
+                elif fy > 0 and G.graph.nodes[new_pos]['bot_edge'] is not None:
                     ay = G.graph.nodes[new_pos]['bot_edge'][1]
 
-                if fy < 0 and G.graph.nodes[new_pos]['top_edge'] is not None:
+                elif fy < 0 and G.graph.nodes[new_pos]['top_edge'] is not None:
                     ay = G.graph.nodes[new_pos]['top_edge'][1]
 
                 new_pos = (ax, ay)
@@ -185,7 +182,7 @@ def solve(lines):
 
 
     part1 = final_coord[0] * 1000 + final_coord[1] * 4 + final_face
-    part1 = None
+    # part1 = None
     part2 = None
 
     return part1, part2
