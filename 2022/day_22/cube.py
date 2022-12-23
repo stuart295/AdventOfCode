@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation as R
 from utils.common import grid_offsets, grid_offsets_3d
 import networkx as nx
-from mpl_toolkits.mplot3d import Axes3D
 
 
 class Cube:
@@ -17,14 +16,12 @@ class Cube:
 
         self.G = self.to_graph(self.points)
 
-
         cur_face = list(self.raw_faces.keys())[0]
         seen = {cur_face}
         self.project_faces(cur_face, seen)
 
         self.clean_cube()
 
-        # self.plot_cube(self.G, 'char')
 
     def create_blank(self, face_size):
         if self.debug:
@@ -88,10 +85,10 @@ class Cube:
         r = R.from_rotvec(np.pi / 2 * np.array([forward_count, side_count, 0]))
         label_mapping = {}
 
-        half_face = (self.face_size+1) / 2
+        half_face = (self.face_size + 1) / 2
 
         for n in self.G.nodes:
-            point = [x - half_face  for x in n]
+            point = [x - half_face for x in n]
             rotated = r.apply([point])
             rotated += half_face
             rotated = map(int, np.round(rotated)[0])
@@ -110,19 +107,10 @@ class Cube:
         ax.scatter(x, y, z)
         plt.show()
 
-
-
     def project_faces(self, cur_face, seen):
         seen.add(cur_face)
 
         self.project(cur_face, self.G)
-
-        # if len(seen) == 5:
-        #     return
-
-        # self.G = self.rotate_cube(1, 0)
-
-        # self.plot_cube(self.G, 'char')
 
         for ox, oy in grid_offsets():
             other_face = (cur_face[0] + ox, cur_face[1] + oy)
@@ -135,9 +123,6 @@ class Cube:
 
                 # Roll back
                 self.G = self.rotate_cube(-ox, oy)
-
-                # if len(seen) == 5:
-                #     break
 
     def project(self, face_pos, G):
 
@@ -153,9 +138,9 @@ class Cube:
             char = face[(x - minx, y - miny)]
             G.nodes[point]['char'] = char
 
-            faces_left = len([x for x,y in self.raw_faces if y == face_pos[1] and x < face_pos[0]])
-            row = face_pos[1]*self.face_size + y
-            col = faces_left*self.face_size + x
+            faces_left = len([x for x, y in self.raw_faces if y == face_pos[1] and x < face_pos[0]])
+            row = face_pos[1] * self.face_size + y
+            col = faces_left * self.face_size + x
             G.nodes[point]['pos_2d'] = (row, col)
 
     def to_graph(self, points):
@@ -197,18 +182,18 @@ class Cube:
 
         return G
 
-    def plot_cube(self, G, label_name=None):
+    def plot_cube(self, G, label_name=None, path=(), s=100):
 
         # Extract node and edge positions from the layout
-        node_xyz = np.array([v for v in sorted(G)])
-        edge_xyz = np.array([(u, v) for u, v in G.edges()])
+        node_xyz = np.array([v for v in sorted(G) if v not in path])
+        edge_xyz = np.array([(u, v) for u, v in G.edges() if u not in path and v not in path])
 
         # Create the 3D figure
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
 
         # Plot the nodes - alpha is scaled by "depth" automatically
-        ax.scatter(*node_xyz.T, s=100, ec="w")
+        ax.scatter(*node_xyz.T, s=s, ec="w")
 
         # labels
         if label_name:
@@ -226,6 +211,13 @@ class Cube:
         # Plot the edges
         for vizedge in edge_xyz:
             ax.plot(*vizedge.T, color="tab:gray")
+
+        if path:
+            path_node_xyz = np.array([v for v in sorted(G) if v in path])
+            path_edge_xyz = np.array([(u, v) for u, v in G.edges() if u in path and v in path])
+            ax.scatter(*path_node_xyz.T, s=s, ec="w", c='red')
+            for edge in path_edge_xyz:
+                ax.plot(*edge.T, color="red")
 
         def _format_axes(ax):
             """Visualization options for the 3D axes."""
@@ -259,12 +251,12 @@ class Cube:
 
         direction = np.array((1, 0, 0))
 
-        path = [self.G.nodes[cur_pos]['pos_2d']]
+        path_2d = [self.G.nodes[cur_pos]['pos_2d']]
+        path_3d = [cur_pos]
 
         norm = np.array(self.G.nodes[tuple(cur_pos)]['norm'])
 
         for cur_instr in instr:
-
             if isinstance(cur_instr, str):
                 if cur_instr == 'R':
                     rot_array = norm
@@ -287,7 +279,7 @@ class Cube:
                         break
 
                     self.G.nodes[tuple(np.round(cur_pos))]['char'] = '+'
-                    path.append(self.G.nodes[tuple(np.round(cur_pos))]['pos_2d'])
+                    path_2d.append(self.G.nodes[tuple(np.round(cur_pos))]['pos_2d'])
+                    path_3d.append(tuple(np.round(cur_pos)))
 
-        return path
-
+        return path_2d, path_3d

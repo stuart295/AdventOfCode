@@ -1,15 +1,15 @@
 from utils.common import solve_puzzle
-from cube import  Cube
+from cube import Cube
+
 
 def print_face(face):
-    face_size = max(x for (x,y) in face)+1
+    face_size = max(x for (x, y) in face) + 1
     for y in range(face_size):
         line = ""
         for x in range(face_size):
-            line += face[(x,y)]
+            line += face[(x, y)]
 
         print(line)
-
 
 
 def read_faces(face_size, fheight, fwidth, lines):
@@ -49,17 +49,13 @@ def read_faces(face_size, fheight, fwidth, lines):
 
     return faces
 
+
 def read_data(lines, face_size):
     fwidth = max(len(line) for line in lines) // face_size
     fheight = len(lines) // face_size
 
     faces = read_faces(face_size, fheight, fwidth, lines)
-
-
-    # print_face(faces[(1,1)])
-
     return Cube(faces, face_size)
-
 
 
 def get_instr(instr: str):
@@ -90,25 +86,22 @@ def get_instr(instr: str):
         break
 
 
-FACINGS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-
-FACING_ORDER = ['R', 'D', 'L', 'U']
-
-
 def solve(lines):
-    # cube = read_data(lines, 4)
-    cube = read_data(lines, 50)
+    # cube = read_data(lines, 4) # Sample
+    cube = read_data(lines, 50)  # Final input
 
     instr = [i for i in get_instr(instr=lines[-1].strip())]
 
-    path = cube.follow_instructions(instr)
+    path_2d, path_3d = cube.follow_instructions(instr)
 
-    # cube.plot_cube(cube.G, 'char')
+    # cube.plot_cube(cube.G, path=set(path_3d))
 
-    final_pos = path[-1]
+    final_pos = path_2d[-1]
 
     print(final_pos)
 
+    # For now, I'm just printing all 4 possible outputs.
+    # TODO Convert final direction vector to facing index
     for i in range(4):
         print(final_pos[0] * 1000 + final_pos[1] * 4 + i)
 

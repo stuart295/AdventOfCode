@@ -1,5 +1,4 @@
-from utils.common import solve_puzzle, grid_offsets
-import networkx as nx
+from utils.common import solve_puzzle
 
 from utils.grid_graph import GridGraph
 
@@ -22,23 +21,6 @@ def read_data(lines):
             col_min = min(i for i, c in enumerate(lines[y]) if c != ' ')
             col_max = max(i for i, c in enumerate(lines[y]) if c != ' ')
 
-            # if node['char'] == ' ':
-            #     empty += 1
-            #
-            #     edges = {
-            #         (1, 0) : 'left_edge',
-            #         (-1, 0): 'right_edge',
-            #         (1, 0): 'top_edge',
-            #         (-1, 0): 'bot_edge'
-            #     }
-            #
-            #     for ox, oy in grid_offsets():
-            #         off = (x + ox, y + oy)
-            #         if off in G.graph.nodes and G.graph.nodes[off]['char'] == '.':
-            #             G.graph.nodes[off]['char'] = edges[(ox, oy)]
-            #
-            #     continue
-
             if node['char'] == '.':
                 if not start:
                     start = (x, y)
@@ -50,21 +32,6 @@ def read_data(lines):
                 # Left edge
                 if x == col_min and G.graph.nodes[(col_max, y)]['char'] == '.':
                     G.graph.nodes[cur_pos]['left_edge'] = (col_max, y)
-
-                # if x == G.w - 1 or G.graph.nodes[(x + 1, y)]['char'] == ' ':
-                #     for tx in range(x - 1, -1, -1):
-                #         if tx == 0 or ((tx, y) in G.graph.nodes and G.graph.nodes[(tx - 1, y)]['char'] == ' '):
-                #             G.graph.nodes[cur_pos]['right_edge'] = (tx, y)
-                #             break
-
-                # Left edge
-                # if x == 0 or G.graph.nodes[(x - 1, y)]['char'] == ' ':
-                #     for tx in range(x + 1, G.w):
-                #         if tx == G.w - 1 or ((tx, y) in G.graph.nodes and G.graph.nodes[(tx + 1, y)]['char'] == ' '):
-                #             G.graph.nodes[cur_pos]['left_edge'] = (tx, y)
-                #             break
-
-                # Bottom edge
 
                 # Bot edge
                 if y == G.h - 1 or G.graph.nodes[(x, y + 1)]['char'] == ' ':
@@ -122,15 +89,7 @@ def get_instr(instr: str):
         break
 
 
-# FACINGS = {
-#     'R' : (1, 0),
-#     'L' : (-1, 0),
-#     'U' : (-1, 0),
-#     'D' : (1, 0)
-# }
-
 FACINGS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-
 FACING_ORDER = ['R', 'D', 'L', 'U']
 
 
@@ -184,21 +143,12 @@ def follow_instructions(instr, start, G):
 def solve(lines):
     G, instr, start = read_data(lines)
 
-    # G.draw(label_name='pos')
-
     path, final_face = follow_instructions(instr, start, G)
 
-    # G.draw( path=path, node_size=2, hide_labels=True)
-
     final_pos = path[-1]
-
-    print(final_pos)
-    print(G.graph.nodes[final_pos]['pos'])
     final_coord = G.graph.nodes[final_pos]['pos']
 
-
     part1 = final_coord[0] * 1000 + final_coord[1] * 4 + final_face
-    # part1 = None
     part2 = None
 
     return part1, part2
@@ -206,4 +156,4 @@ def solve(lines):
 
 debug = False
 solve_puzzle(year=2022, day=22, solver=solve, do_sample=True, do_main=False)
-# solve_puzzle(year=2022, day=22, solver=solve, do_sample=False, do_main=True)
+solve_puzzle(year=2022, day=22, solver=solve, do_sample=False, do_main=True)
