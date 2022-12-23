@@ -17,8 +17,10 @@ def print_face(face):
 
 def read_faces(face_size, fheight, fwidth, lines):
     faces = {}
-    for fx in range(fwidth):
-        for fy in range(fheight):
+    start_found = False
+
+    for fy in range(fheight):
+        for fx in range(fwidth):
             face = {}
 
             no_face = False
@@ -36,6 +38,10 @@ def read_faces(face_size, fheight, fwidth, lines):
                         no_face = True
                         break
 
+                    if char == '.' and not start_found:
+                        char = 'S'
+                        start_found = True
+
                     face[(x, y)] = char
 
                 if no_face:
@@ -52,9 +58,10 @@ def read_data(lines, face_size):
 
     faces = read_faces(face_size, fheight, fwidth, lines)
 
-    # print_face(faces[(3,2)])
 
-    cube = Cube(faces, face_size)
+    # print_face(faces[(1,1)])
+
+    return Cube(faces, face_size)
 
 
 
@@ -140,9 +147,22 @@ def follow_instructions(instr, start, G):
 
 
 def solve(lines):
-    read_data(lines, 4)
+    cube = read_data(lines, 4)
 
-    # G.draw(label_name='pos')
+    instr = [i for i in get_instr(instr=lines[-1].strip())]
+
+    path = cube.follow_instructions(instr)
+
+    final_pos = path[-1]
+
+    print(final_pos)
+
+    for i in range(4):
+        print(final_pos[0] * 1000 + final_pos[1] * 4 + i)
+
+    part2 = None
+
+
 
     # path, final_face = follow_instructions(instr, start, G)
 
@@ -157,7 +177,7 @@ def solve(lines):
     #
     # part1 = final_coord[0] * 1000 + final_coord[1] * 4 + final_face
     part1 = None
-    part2 = None
+    # part2 = None
     #
     return part1, part2
 

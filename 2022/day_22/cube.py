@@ -17,11 +17,14 @@ class Cube:
 
         self.G = self.to_graph(self.points)
 
+
         cur_face = list(self.raw_faces.keys())[0]
         seen = {cur_face}
         self.project_faces(cur_face, seen)
 
-        self.plot_cube(self.G, 'char')
+        self.clean_cube()
+
+        # self.plot_cube(self.G, 'char')
 
     def create_blank(self, face_size):
         if self.debug:
@@ -85,8 +88,12 @@ class Cube:
         r = R.from_rotvec(np.pi / 2 * np.array([forward_count, side_count, 0]))
         label_mapping = {}
 
+        half_face = (self.face_size+1) / 2
+
         for n in self.G.nodes:
-            rotated = r.apply([n])
+            point = [x - half_face  for x in n]
+            rotated = r.apply([point])
+            rotated += half_face
             rotated = map(int, np.round(rotated)[0])
             label_mapping[n] = tuple(rotated)
 
@@ -103,48 +110,59 @@ class Cube:
         ax.scatter(x, y, z)
         plt.show()
 
+
+
     def project_faces(self, cur_face, seen):
         seen.add(cur_face)
 
-        self.project(self.raw_faces[cur_face], self.G)
+        self.project(cur_face, self.G)
 
-        # self.G = self.rotate_cube(-1, 0)
-        #
+        # if len(seen) == 5:
+        #     return
+
+        # self.G = self.rotate_cube(1, 0)
+
         # self.plot_cube(self.G, 'char')
 
         for ox, oy in grid_offsets():
             other_face = (cur_face[0] + ox, cur_face[1] + oy)
             if other_face in self.raw_faces and other_face not in seen:
                 # Roll onto face
-                self.G = self.rotate_cube(ox, oy)
+                self.G = self.rotate_cube(ox, -oy)
 
                 # Project
                 self.project_faces(other_face, seen)
 
                 # Roll back
-                self.G = self.rotate_cube(-ox, -oy)
+                self.G = self.rotate_cube(-ox, oy)
 
-    def project(self, face, G):
+                # if len(seen) == 5:
+                #     break
 
-        half_face = self.face_size // 2
+    def project(self, face_pos, G):
 
-        minx = min(x for x, y, z in G.nodes if z == -half_face)
-        miny = min(y for x, y, z in G.nodes if z == -half_face)
+        face = self.raw_faces[face_pos]
+
+        minx = min(x for x, y, z in G.nodes if z == 0)
+        miny = min(y for x, y, z in G.nodes if z == 0)
 
         for point in G.nodes:
             x, y, z = point
-            if z != -half_face:
+            if z != 0:
                 continue
             char = face[(x - minx, y - miny)]
             G.nodes[point]['char'] = char
 
+            faces_left = len([x for x,y in self.raw_faces if y == face_pos[1] and x < face_pos[0]])
+            row = face_pos[1]*self.face_size + y
+            col = faces_left*self.face_size + x
+            G.nodes[point]['pos_2d'] = (row, col)
+
     def to_graph(self, points):
         G = nx.Graph()
 
-        half_face = self.face_size // 2
         for p in points:
-            x, y, z = p
-            G.add_node((x - half_face, y - half_face, z - half_face), char='$')
+            G.add_node(p, char='$')
 
         for p in G.nodes:
             x, y, z = p
@@ -154,17 +172,17 @@ class Cube:
                     G.add_edge(p, neigh)
 
             norm = None
-            if z == -half_face:
+            if z == 0:
                 norm = (0, 0, -1)
-            elif z == half_face+1:
+            elif z == self.face_size + 1:
                 norm = (0, 0, 1)
-            elif x == -half_face:
+            elif x == 0:
                 norm = (-1, 0, 0)
-            elif x == half_face+1:
+            elif x == self.face_size + 1:
                 norm = (1, 0, 0)
-            elif y == -half_face:
+            elif y == 0:
                 norm = (0, -1, 0)
-            elif y == half_face+1:
+            elif y == self.face_size + 1:
                 norm = (0, 1, 0)
 
             G.nodes[p]['norm'] = norm
@@ -196,8 +214,14 @@ class Cube:
         if label_name:
             for n in node_xyz:
                 label = G.nodes[tuple(n)][label_name]
+                if label == '$':
+                    label = ''
+                color = 'black'
+                if label in ['S', 'E', '+']:
+                    color = 'red'
+
                 x, y, z = n
-                ax.text(x, y, z, label)
+                ax.text(x, y, z, label, size=12, c=color)
 
         # Plot the edges
         for vizedge in edge_xyz:
@@ -218,3 +242,48 @@ class Cube:
         _format_axes(ax)
         fig.tight_layout()
         plt.show()
+
+    def clean_cube(self):
+        to_remove = []
+
+        for node in self.G.nodes:
+            if self.G.nodes[node]['char'] == '#':
+                to_remove.append(node)
+
+        for node in to_remove:
+            self.G.remove_node(node)
+
+    def follow_instructions(self, instr):
+
+        cur_pos = [n for n in self.G.nodes if self.G.nodes[n]['char'] == 'S'][0]
+
+        direction = np.array((1, 0, 0))
+        norm = np.array(self.G.nodes[cur_pos]['norm'])
+
+        path = [self.G.nodes[cur_pos]['pos_2d']]
+
+        for cur_instr in instr:
+            if isinstance(cur_instr, str):
+                if cur_instr == 'R':
+                    rot_array = -norm
+                else:
+                    rot_array = norm
+
+                r = R.from_rotvec(np.pi / 2 * rot_array)
+                direction = r.apply(direction)
+            else:
+                for step in range(cur_instr):
+                    next_pos = cur_pos + direction
+                    if tuple(next_pos) in self.G.nodes:
+                        cur_pos = next_pos
+                    elif tuple(next_pos - norm) in self.G.nodes:
+                        cur_pos = next_pos - norm
+                        direction = -norm
+                    else:
+                        break
+
+                    self.G.nodes[tuple(cur_pos)]['char'] = '+'
+                    path.append(self.G.nodes[tuple(cur_pos)]['pos_2d'])
+
+        return path
+
