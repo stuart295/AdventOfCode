@@ -55,13 +55,14 @@ def grid_offsets(diagonals=False):
     return straight_offsets
 
 
-def grid_offsets_3d(diagonals=False):
+def grid_offsets_3d(diagonals=False, corners=False):
     for xoff, yoff in grid_offsets(diagonals):
         yield xoff, yoff, 0
 
         if diagonals:
-            yield xoff, yoff, 1
-            yield xoff, yoff, -1
+            if not (not corners and all(abs(x) == 1 for x in (xoff, yoff))):
+                yield xoff, yoff, 1
+                yield xoff, yoff, -1
 
     yield 0, 0, 1
     yield 0, 0, -1
