@@ -173,17 +173,17 @@ class Cube:
 
             norm = None
             if z == 0:
-                norm = (0, 0, -1)
-            elif z == self.face_size + 1:
                 norm = (0, 0, 1)
+            elif z == self.face_size + 1:
+                norm = (0, 0, -1)
             elif x == 0:
-                norm = (-1, 0, 0)
-            elif x == self.face_size + 1:
                 norm = (1, 0, 0)
+            elif x == self.face_size + 1:
+                norm = (-1, 0, 0)
             elif y == 0:
-                norm = (0, -1, 0)
-            elif y == self.face_size + 1:
                 norm = (0, 1, 0)
+            elif y == self.face_size + 1:
+                norm = (0, -1, 0)
 
             G.nodes[p]['norm'] = norm
 
@@ -258,32 +258,36 @@ class Cube:
         cur_pos = [n for n in self.G.nodes if self.G.nodes[n]['char'] == 'S'][0]
 
         direction = np.array((1, 0, 0))
-        norm = np.array(self.G.nodes[cur_pos]['norm'])
 
         path = [self.G.nodes[cur_pos]['pos_2d']]
 
+        norm = np.array(self.G.nodes[tuple(cur_pos)]['norm'])
+
         for cur_instr in instr:
+
             if isinstance(cur_instr, str):
                 if cur_instr == 'R':
-                    rot_array = -norm
-                else:
                     rot_array = norm
+                else:
+                    rot_array = -norm
 
                 r = R.from_rotvec(np.pi / 2 * rot_array)
                 direction = r.apply(direction)
+                direction = np.round(direction)
             else:
                 for step in range(cur_instr):
-                    next_pos = cur_pos + direction
+                    next_pos = np.round(cur_pos + direction)
                     if tuple(next_pos) in self.G.nodes:
                         cur_pos = next_pos
-                    elif tuple(next_pos - norm) in self.G.nodes:
-                        cur_pos = next_pos - norm
-                        direction = -norm
+                    elif tuple(np.round(next_pos + norm)) in self.G.nodes:
+                        cur_pos = np.round(next_pos + norm)
+                        direction = norm
+                        norm = np.array(self.G.nodes[tuple(cur_pos)]['norm'])
                     else:
                         break
 
-                    self.G.nodes[tuple(cur_pos)]['char'] = '+'
-                    path.append(self.G.nodes[tuple(cur_pos)]['pos_2d'])
+                    self.G.nodes[tuple(np.round(cur_pos))]['char'] = '+'
+                    path.append(self.G.nodes[tuple(np.round(cur_pos))]['pos_2d'])
 
         return path
 

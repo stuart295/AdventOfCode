@@ -1,8 +1,5 @@
-from utils.common import solve_puzzle, grid_offsets
+from utils.common import solve_puzzle
 from cube import  Cube
-import networkx as nx
-
-from utils.grid_graph import GridGraph
 
 def print_face(face):
     face_size = max(x for (x,y) in face)+1
@@ -98,60 +95,15 @@ FACINGS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
 FACING_ORDER = ['R', 'D', 'L', 'U']
 
 
-def follow_instructions(instr, start, G):
-    # face_idx = 0
-    # facing = FACINGS[face_idx]
-    #
-    # pos = start
-    #
-    # path = [pos]
-    #
-    # for cur_instr in get_instr(instr):
-    #     if debug: print(f"{G.graph.nodes[pos]['pos']} - {cur_instr}")
-    #     if isinstance(cur_instr, str):
-    #         if cur_instr == 'R':
-    #             face_idx = (face_idx + 1) % len(FACINGS)
-    #         else:
-    #             face_idx = (face_idx - 1) % len(FACINGS)
-    #         facing = FACINGS[face_idx]
-    #     else:
-    #         new_pos = pos
-    #         for step in range(cur_instr):
-    #             x, y = new_pos
-    #             fx, fy = facing
-    #
-    #             ax, ay = (x + fx, y + fy)
-    #
-    #             if fx > 0 and G.graph.nodes[new_pos]['right_edge'] is not None:
-    #                 ax = G.graph.nodes[new_pos]['right_edge'][0]
-    #
-    #             elif fx < 0 and G.graph.nodes[new_pos]['left_edge'] is not None:
-    #                 ax = G.graph.nodes[new_pos]['left_edge'][0]
-    #
-    #             elif fy > 0 and G.graph.nodes[new_pos]['bot_edge'] is not None:
-    #                 ay = G.graph.nodes[new_pos]['bot_edge'][1]
-    #
-    #             elif fy < 0 and G.graph.nodes[new_pos]['top_edge'] is not None:
-    #                 ay = G.graph.nodes[new_pos]['top_edge'][1]
-    #
-    #             new_pos = (ax, ay)
-    #
-    #             if new_pos in G.graph.nodes:
-    #                 pos = new_pos
-    #                 path.append(pos)
-    #             else:
-    #                 break
-    #
-    # return path, face_idx
-    return None, None
-
-
 def solve(lines):
-    cube = read_data(lines, 4)
+    # cube = read_data(lines, 4)
+    cube = read_data(lines, 50)
 
     instr = [i for i in get_instr(instr=lines[-1].strip())]
 
     path = cube.follow_instructions(instr)
+
+    # cube.plot_cube(cube.G, 'char')
 
     final_pos = path[-1]
 
@@ -162,26 +114,9 @@ def solve(lines):
 
     part2 = None
 
-
-
-    # path, final_face = follow_instructions(instr, start, G)
-
-    # G.draw( path=path, node_size=2, hide_labels=True)
-    #
-    # final_pos = path[-1]
-    #
-    # print(final_pos)
-    # print(G.graph.nodes[final_pos]['pos'])
-    # final_coord = G.graph.nodes[final_pos]['pos']
-    #
-    #
-    # part1 = final_coord[0] * 1000 + final_coord[1] * 4 + final_face
-    part1 = None
-    # part2 = None
-    #
-    return part1, part2
+    return None, part2
 
 
 debug = False
-solve_puzzle(year=2022, day=22, solver=solve, do_sample=True, do_main=False)
-# solve_puzzle(year=2022, day=22, solver=solve, do_sample=False, do_main=True)
+# solve_puzzle(year=2022, day=22, solver=solve, do_sample=True, do_main=False)
+solve_puzzle(year=2022, day=22, solver=solve, do_sample=False, do_main=True)
