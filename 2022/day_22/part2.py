@@ -92,20 +92,12 @@ def solve(lines):
 
     instr = [i for i in get_instr(instr=lines[-1].strip())]
 
-    path_2d, path_3d = cube.follow_instructions(instr)
+    path_2d, path_3d, facing_idx = cube.follow_instructions(instr)
 
     # cube.plot_cube(cube.G, path=set(path_3d))
 
     final_pos = path_2d[-1]
-
-    print(final_pos)
-
-    # For now, I'm just printing all 4 possible outputs.
-    # TODO Convert final direction vector to facing index
-    for i in range(4):
-        print(final_pos[0] * 1000 + final_pos[1] * 4 + i)
-
-    part2 = None
+    part2 = final_pos[0] * 1000 + final_pos[1] * 4 + facing_idx
 
     return None, part2
 

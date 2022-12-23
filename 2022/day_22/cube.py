@@ -4,6 +4,8 @@ from scipy.spatial.transform import Rotation as R
 from utils.common import grid_offsets, grid_offsets_3d
 import networkx as nx
 
+FACINGS = [(1, 0), (0, 1), (-1, 0), (0, -1)]
+
 
 class Cube:
 
@@ -21,7 +23,6 @@ class Cube:
         self.project_faces(cur_face, seen)
 
         self.clean_cube()
-
 
     def create_blank(self, face_size):
         if self.debug:
@@ -282,4 +283,18 @@ class Cube:
                     path_2d.append(self.G.nodes[tuple(np.round(cur_pos))]['pos_2d'])
                     path_3d.append(tuple(np.round(cur_pos)))
 
-        return path_2d, path_3d
+        # Work out final facing direction using 2d coords
+        row, col = self.G.nodes[tuple(cur_pos)]['pos_2d']
+
+        neigh = tuple(np.round(cur_pos + direction))
+        if neigh in self.G.nodes:
+            nrow, ncol = self.G.nodes[neigh]['pos_2d']
+            drow, dcol = nrow - row, ncol - col
+        else:
+            neigh = tuple(np.round(cur_pos - direction))
+            nrow, ncol = self.G.nodes[neigh]['pos_2d']
+            drow, dcol = row - nrow, col - ncol
+
+        facing = FACINGS.index((dcol, drow))
+
+        return path_2d, path_3d, facing
