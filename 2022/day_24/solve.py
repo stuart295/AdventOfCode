@@ -1,129 +1,149 @@
+from collections import deque
+from functools import lru_cache
+
 from utils.common import solve_puzzle, grid_offsets
 from utils.grid_graph import GridGraph
 from copy import deepcopy
 
 BLIZZ = {'v': (0, 1), '<': (-1, 0), '>': (1, 0), '^': (0, -1)}
 
+
 def read_data(lines):
-    G = GridGraph([line.strip() for line in lines])
+    G = GridGraph([line.strip() for line in lines]) # Hijacking this class for convenience
     G.set_walls('#')
 
+    blizzards = {}
+
     for node in G.graph.nodes:
-        G.graph.nodes[node]['blizz'] = set()
+        blizzards[node] = set()
         if G.graph.nodes[node]['char'] in BLIZZ:
-            G.graph.nodes[node]['blizz'].add(G.graph.nodes[node]['char'])
+            blizzards[node].add(G.graph.nodes[node]['char'])
             G.graph.nodes[node]['char'] = '.'
 
-    return G
+    return G, blizzards
 
 
-def to_array(g, w, h):
-    out = []
-    for y in range(h):
-        line = []
-        for x in range(w):
-            if (x, y) in g.nodes:
-                cell = [g.nodes[(x, y)]['char']] + list(sorted(list(g.nodes[(x, y)]['blizz'])))
-            else:
-                cell = tuple()
-
-            line.append(tuple(cell))
-        out.append(tuple(line))
-    return tuple(out)
+@lru_cache()
+def taxicab(p1, p2):
+    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
 
 
-def solve_part_1(G, path, start=(1, 0), cache=None):
-    g = G.graph
+@lru_cache()
+def is_valid(pos, w, h, start, end):
+    if pos == start or pos == end:
+        return True
 
-    # g.nodes[start]['char'] = 'E'
-    # G.graph = g
-    # G.draw('char')
+    x, y = pos
+    return 1 <= x <= (w - 2) and 1 <= y <= (h - 2)
 
-    state = to_array(g, G.w, G.h)
-    if (state, start) in cache:
-        return None
 
-    cache.add((state, start))
+def find_path(blizzards, w, h, start, end, cache=None, limit=500):
+    to_check = deque()
+    to_check.append((deepcopy(blizzards), start, 0))
 
-    path.append(start)
+    bliz_loop = (w - 2) * (h - 2) // 2
 
-    if start[1] == G.h - 1:
-        # g.nodes[start]['char'] = 'E'
-        # G.graph = g
-        # G.draw('char')
-        # found = True
-        # print(len(path))
-        return path.copy()
+    shortest = limit
 
-    next_g = deepcopy(g)
+    blizz_cache = {}
+    final_blizz = None
 
-    for node in next_g.nodes:
-        next_g.nodes[node]['blizz'] = set()
+    while to_check:
+        to_check = sorted(to_check, key=lambda x: taxicab(x[1], end), reverse=True)
+
+        cur_blizzards, pos, cur_dist = to_check.pop()
+
+        rem_dist = taxicab(pos, end)
+        if cur_dist + rem_dist >= shortest:
+            continue
+
+        state = (cur_dist % bliz_loop, pos)
+        if state in cache:
+            continue
+
+        cache.add(state)
+
+        if pos == end:
+            if cur_dist < shortest:
+                shortest = cur_dist
+                final_blizz = cur_blizzards
+            continue
+
+        cur_blizzards = update_blizzards(cur_blizzards, cur_dist % bliz_loop, blizz_cache, w, h, start, end)
+
+        # Choose positions
+        x, y = pos
+
+        for ox, oy in grid_offsets():
+            neighx, neighy = x + ox, y + oy
+            neigh = (neighx, neighy)
+            if is_valid(neigh, w, h, start, end) and len(cur_blizzards[neigh]) == 0:
+                dist = taxicab(neigh, end)
+                if cur_dist + dist < shortest:
+                    to_check.append((cur_blizzards.copy(), neigh, cur_dist + 1))
+
+        if len(cur_blizzards[pos]) == 0:
+            dist = taxicab(pos, end)
+            if cur_dist + dist < shortest:
+                to_check.append((cur_blizzards.copy(), pos, cur_dist + 1))
+
+    return shortest, final_blizz
+
+
+def update_blizzards(blizzards, step, blizz_cache, w, h, start, end):
+    if step in blizz_cache:
+        return blizz_cache[step]
+
+    new_blizz = deepcopy(blizzards)
+
+    for node in new_blizz:
+        new_blizz[node] = set()
 
     # Update blizzards
-    for node in g.nodes:
+    for node in blizzards:
         x, y = node
-        blizz = g.nodes[node]['blizz']
+        blizz = blizzards[node]
         for b in blizz:
             dir = BLIZZ[b]
             dest = (x + dir[0], y + dir[1])
-            if dest not in next_g.nodes:
+            if not is_valid(dest, w, h, start, end):
                 if b == 'v':
                     dest = (x, 1)
                 elif b == '^':
-                    dest = (x, G.h - 2)
+                    dest = (x, h - 2)
                 elif b == '<':
-                    dest = (G.w - 2, y)
+                    dest = (w - 2, y)
                 elif b == '>':
                     dest = (1, y)
 
-            next_g.nodes[dest]['blizz'].add(b)
+            new_blizz[dest].add(b)
 
-    G.graph = next_g
-
-    # Choose positions
-    shortest = 1e9
-    final_path = None
-    x, y = start
-    for ox, oy in grid_offsets():
-        neighx, neighy = x + ox, y + oy
-        neigh = (neighx, neighy)
-        if neigh in next_g.nodes and len(next_g.nodes[neigh]['blizz']) == 0:
-            sub_path = solve_part_1(deepcopy(G), deepcopy(path), neigh, cache)
-            if not sub_path:
-                continue
-            if len(sub_path) < shortest:
-                shortest = len(sub_path)
-                final_path = sub_path
-
-    if not final_path:
-        stay = start
-        if len(next_g.nodes[stay]['blizz']) == 0:
-            sub_path = solve_part_1(deepcopy(G), deepcopy(path), stay, cache)
-            if sub_path:
-                if len(sub_path) < shortest:
-                    final_path = sub_path
-
-    return final_path
+    blizz_cache[step] = new_blizz
+    return new_blizz
 
 
 def solve(lines):
-    G = read_data(lines)
-
-    # G.draw("char")
-
+    G, blizzards = read_data(lines)
     cache = set()
 
     start = (1, 0)
-    path = solve_part_1(deepcopy(G), [], start, cache)
+    end = (G.w - 2, G.h - 1)
 
-    part1 = len(path) -1
+    # Part 1
+    part1, blizzards = find_path(blizzards.copy(), G.w, G.h, start, end, cache)
 
-    part2 = None
+    # Part 2
+    cache.clear()
+    trip_back_dist, blizzards = find_path(blizzards.copy(), G.w, G.h, end, start, cache)
+
+    cache.clear()
+    final_trip_dist, blizzards = find_path(blizzards.copy(), G.w, G.h, start, end, cache)
+
+    part2 = part1 + trip_back_dist + final_trip_dist
 
     return part1, part2
 
 
 debug = True
 solve_puzzle(year=2022, day=24, solver=solve, do_sample=True, do_main=False, sample_data_path='sample')
-# solve_puzzle(year=2022, day=24, solver=solve, do_sample=False, do_main=True)
+solve_puzzle(year=2022, day=24, solver=solve, do_sample=False, do_main=True)
