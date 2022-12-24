@@ -74,3 +74,7 @@ def jobify(func, args, share_mem=False, verbose=False):
         verbose=10 if verbose else 0,
         require='sharedmem' if share_mem else None
     )(delayed(func)(*arg) for arg in args)
+
+
+def manhatten(p1, p2):
+    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])

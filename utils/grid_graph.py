@@ -42,3 +42,16 @@ class GridGraph:
     def shortest_path(self, start, end, weights=None):
         return nx.shortest_path(self.graph, start, end, weight = weights)
 
+
+    def to_array(self, graph=None):
+        g = graph or self.graph
+
+        out = []
+        for y in range(self.h):
+            line = []
+            for x in range(self.w):
+                char = g.nodes[(x,y)]['char'] if (x,y) in g.nodes else ' '
+                line.append(char)
+            out.append(line)
+        return out
+
