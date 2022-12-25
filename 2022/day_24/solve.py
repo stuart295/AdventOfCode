@@ -9,7 +9,7 @@ BLIZZ = {'v': (0, 1), '<': (-1, 0), '>': (1, 0), '^': (0, -1)}
 
 
 def read_data(lines):
-    G = GridGraph([line.strip() for line in lines]) # Hijacking this class for convenience
+    G = GridGraph([line.strip() for line in lines])  # Hijacking this class for convenience
     G.set_walls('#')
 
     blizzards = {}
@@ -21,6 +21,16 @@ def read_data(lines):
             G.graph.nodes[node]['char'] = '.'
 
     return G, blizzards
+
+
+def lcm(a, b):
+    big, small = max(a, b), min(a, b)
+
+    result = big
+    while result % small != 0:
+        result += big
+
+    return result
 
 
 @lru_cache()
@@ -41,7 +51,7 @@ def find_path(blizzards, w, h, start, end, cache=None, limit=500):
     to_check = deque()
     to_check.append((deepcopy(blizzards), start, 0))
 
-    bliz_loop = (w - 2) * (h - 2) // 2
+    bliz_loop = lcm(w-2, h-2)
 
     shortest = limit
 
