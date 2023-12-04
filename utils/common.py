@@ -18,6 +18,7 @@ def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_
         print(f"{'Sample':-^20}")
 
         data = puzzle.example_data.splitlines() if sample_data_path is None else open(sample_data_path).readlines()
+        data = [line.strip() for line in data]
         sample_solution_a, sample_solution_b = solver(data)
         print(f"Part 1: {sample_solution_a}")
         print(f"Part 2: {sample_solution_b}")
@@ -27,6 +28,7 @@ def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_
     # Main input data
     print(f"{'Main input':-^20}")
     data = puzzle.input_data.splitlines() if main_data_path is None else open(main_data_path).readlines()
+    data = [line.strip() for line in data]
     part_1, part_2 = solver(data)
 
     if part_1 is not None:
