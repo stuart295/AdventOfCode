@@ -1,5 +1,7 @@
 from utils.common import solve_puzzle
 
+YEAR = 2023
+DAY = -1
 
 def solve(lines):
     part1 = None
@@ -10,5 +12,5 @@ def solve(lines):
 
 
 debug = True
-solve_puzzle(year=2022, day=-1, solver=solve, do_sample=True, do_main=False)
-# solve_puzzle(year=2022, day=-1, solver=solve, do_sample=False, do_main=True)
+solve_puzzle(year=YEAR, day=DAY, solver=solve, do_sample=True, do_main=False)
+# solve_puzzle(year=YEAR, day=DAY, solver=solve, do_sample=False, do_main=True)
