@@ -17,7 +17,7 @@ class GridGraph:
         to_remove = [node for node, att in self.graph.nodes.items() if att['char'] in walls]
         self.graph.remove_nodes_from(to_remove)
 
-    def draw(self, label_name=None, path=None, node_size=300, hide_labels=False):
+    def draw(self, label_name=None, path=None, node_size=300, hide_labels=False, show_now=True):
         """
         Draws the current grid graph. If label_name is set, each nodes attribute with this name is used as the label,
         otherwise the coordinates are used
@@ -37,7 +37,8 @@ class GridGraph:
             nx.draw_networkx_edges(self.graph, pos=pos, edgelist=path_edges, edge_color='r', width=5)
             nx.draw_networkx_nodes(self.graph, pos=pos, nodelist=path, node_color='r', node_size=node_size)
 
-        plt.show()
+        if show_now:
+            plt.show()
 
     def shortest_path(self, start, end, weights=None):
         return nx.shortest_path(self.graph, start, end, weight = weights)
