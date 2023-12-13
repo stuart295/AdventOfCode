@@ -1,12 +1,4 @@
-import itertools
-import operator
-import re
-from collections import Counter
-from functools import lru_cache, reduce
-from itertools import combinations, combinations_with_replacement, product, permutations
-
-from joblib import Parallel, delayed
-
+from functools import lru_cache
 from utils.common import solve_puzzle
 
 YEAR = 2023
@@ -70,23 +62,17 @@ def get_combs(group, count):
     return total
 
 
-def solve_part_01(groups, counts):
-    totals = []
-
-    for i, (group, count) in enumerate(zip(groups, counts)):
-        totals.append(get_combs(group, tuple(count)))
-    return totals
+def solve_groups(groups, counts):
+    return sum(get_combs(group, tuple(count)) for group, count in zip(groups, counts))
 
 
 def solve(lines):
     groups, counts = parse_input(lines)
 
-    comb_counts = solve_part_01(groups, counts)
-    part1 = sum(comb_counts)
+    part1 = solve_groups(groups, counts)
 
     groups, counts = unfold(groups, counts)
-    comb_counts = solve_part_01(groups, counts)
-    part2 = sum(comb_counts)
+    part2 = solve_groups(groups, counts)
 
     return part1, part2
 
