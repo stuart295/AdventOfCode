@@ -106,7 +106,7 @@ def get_rem_dist(end, x):
 def solve(lines):
     grid = [[int(c) for c in l] for l in lines]
 
-    part1 = None  # solve_part_01(grid)
+    part1 = solve_part_01(grid)
     part2 = solve_part_01(grid, True)
 
     return part1, part2
