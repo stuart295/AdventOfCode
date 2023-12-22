@@ -80,3 +80,6 @@ def jobify(func, args, share_mem=False, verbose=False):
 
 def manhatten(p1, p2):
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+
+def in_bounds(pos, w, h):
+    return (0 <= pos[0] < w) and (0 <= pos[1] < h)
