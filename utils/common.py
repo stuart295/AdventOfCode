@@ -1,6 +1,9 @@
 from aocd.models import Puzzle
 import numpy as np
 from joblib import Parallel, delayed
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DIR_MAP = {
     'R': np.array((1, 0)),
@@ -17,7 +20,7 @@ def solve_puzzle(year, day, solver, do_sample: bool, do_main=False, sample_data_
     if do_sample:
         print(f"{'Sample':-^20}")
 
-        data = puzzle.example_data.splitlines() if sample_data_path is None else open(sample_data_path).readlines()
+        data = puzzle.examples[0].input_data.splitlines() if sample_data_path is None else open(sample_data_path).readlines()
         data = [line.strip() for line in data]
         sample_solution_a, sample_solution_b = solver(data)
         print(f"Part 1: {sample_solution_a}")
