@@ -17,30 +17,22 @@ def solve(lines):
 
 
 def solve_part_02(instr: str):
-    dos = re.finditer(r"do\(\)", instr)
-    donts = re.finditer(r"don't\(\)", instr)
     mults = re.finditer(mul_reg, instr)
+    dos = {d.span()[0] for d in re.finditer(r"do\(\)", instr)}
+    donts = {d.span()[0] for d in re.finditer(r"don't\(\)", instr)}
 
-    dos = {d.span()[0] for d in dos}
-    donts = {d.span()[0] for d in donts}
-
-    result = 0
-
-    for mul in mults:
-        pos = mul.span()[0]
-
-        enabled = True
-        for i in range(pos, 0, -1):
-            if i in dos:
-                break
-            if i in donts:
-                enabled = False
-                break
+    enabled = True
+    allowed = set()
+    for i in range(len(instr)):
+        if i in donts:
+            enabled = False
+        if i in dos:
+            enabled = True
 
         if enabled:
-            a, b = mul.groups()
-            result += int(a) * int(b)
-    return result
+            allowed.add(i)
+
+    return sum(int(m.groups()[0]) * int(m.groups()[1]) for m in mults if m.span()[0] in allowed)
 
 
 solve_puzzle(year=YEAR, day=DAY, solver=solve, do_sample=True, do_main=False)
