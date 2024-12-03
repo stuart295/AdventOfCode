@@ -4,27 +4,22 @@ import re
 YEAR = 2024
 DAY = 3
 
+mul_reg = r"mul\((\d{1,3}),(\d{1,3})\)"
+
 
 def solve(lines):
     joined = "\n".join(lines)
 
-    part1 = solve_part_01(joined)
+    part1 = sum(int(a) * int(b) for a, b in re.findall(mul_reg, joined))
     part2 = solve_part_02(joined)
 
     return part1, part2
 
 
-def solve_part_01(instr: str):
-    result = 0
-    for a, b in re.findall(r"mul\((\d{1,3}),(\d{1,3})\)", instr):
-        result += int(a) * int(b)
-    return result
-
-
 def solve_part_02(instr: str):
     dos = re.finditer(r"do\(\)", instr)
     donts = re.finditer(r"don't\(\)", instr)
-    mults = re.finditer(r"mul\((\d{1,3}),(\d{1,3})\)", instr)
+    mults = re.finditer(mul_reg, instr)
 
     dos = {d.span()[0] for d in dos}
     donts = {d.span()[0] for d in donts}
