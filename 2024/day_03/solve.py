@@ -1,39 +1,60 @@
-from utils.common import solve_puzzle
-import re
+from utils.common import solve_puzzle, grid_offsets, in_bounds
 
 YEAR = 2024
-DAY = 3
+DAY = 4
 
-mul_reg = r"mul\((\d{1,3}),(\d{1,3})\)"
+
+def solve_part_01(lines):
+    count = 0
+    target = "XMAS"
+
+    w, h = len(lines[0]), len(lines)
+
+    for y, line in enumerate(lines):
+        for x, c in enumerate(line):
+            if c == 'X':
+                for xo, yo in grid_offsets(diagonals=True):
+
+                    found = True
+                    for step in range(1, 4):
+                        cx, cy = x + xo * step, y + yo * step
+                        if not in_bounds((cx, cy), w, h):
+                            found = False
+                            break
+
+                        if lines[cy][cx] != target[step]:
+                            found = False
+                            break
+
+                    if found:
+                        count += 1
+    return count
+
+
+def solve_part_02(lines):
+    count = 0
+    allowed = {"SAM", "MAS"}
+
+    for y, line in enumerate(lines[1:-1]):
+        for x, c in enumerate(line[1:-1]):
+            if c == 'A':
+                hor1 = lines[y][x] + "A" + lines[y + 2][x + 2]
+                hor2 = lines[y][x + 2] + "A" + lines[y + 2][x]
+
+                if hor1 in allowed and hor2 in allowed:
+                    count += 1
+
+    return count
 
 
 def solve(lines):
-    joined = "\n".join(lines)
+    inp = [list(s) for s in lines]
 
-    part1 = sum(int(a) * int(b) for a, b in re.findall(mul_reg, joined))
-    part2 = solve_part_02(joined)
+    part1 = solve_part_01(inp)
+    part2 = solve_part_02(inp)
 
     return part1, part2
 
 
-def solve_part_02(instr: str):
-    mults = re.finditer(mul_reg, instr)
-    dos = {d.span()[0] for d in re.finditer(r"do\(\)", instr)}
-    donts = {d.span()[0] for d in re.finditer(r"don't\(\)", instr)}
-
-    enabled = True
-    allowed = set()
-    for i in range(len(instr)):
-        if i in donts:
-            enabled = False
-        if i in dos:
-            enabled = True
-
-        if enabled:
-            allowed.add(i)
-
-    return sum(int(m.groups()[0]) * int(m.groups()[1]) for m in mults if m.span()[0] in allowed)
-
-
-solve_puzzle(year=YEAR, day=DAY, solver=solve, do_sample=True, do_main=False)
+solve_puzzle(year=YEAR, day=DAY, solver=solve, do_sample=True, do_main=False, sample_data_path="example.txt")
 solve_puzzle(year=YEAR, day=DAY, solver=solve, do_sample=False, do_main=True)
