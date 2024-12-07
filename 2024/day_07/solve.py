@@ -1,5 +1,4 @@
 from utils.common import solve_puzzle
-from itertools import product
 
 YEAR = 2024
 DAY = 7
@@ -11,28 +10,39 @@ def solve(lines):
         x, y = line.split(": ")
         inputs.append([int(x), list(map(int, y.split(" ")))])
 
-    part1 = solve_like_a_savage(inputs, "*+")
-    part2 = solve_like_a_savage(inputs, "*+|")
+    part1 = solve_parts(inputs)
+    part2 = solve_parts(inputs, True)
 
     return part1, part2
 
 
-def solve_like_a_savage(inputs, ops):
+def is_legit(target, nums, part2):
+    if sum(nums) == target:
+        return True
+
+    if len(nums) <= 1:
+        return False
+
+    if is_legit(target, [nums[0] * nums[1]] + nums[2:], part2):
+        return True
+
+    if is_legit(target, [nums[0] + nums[1]] + nums[2:], part2):
+        return True
+
+    if part2 and len(nums) >= 2:
+        nums[0] = int(str(nums[0]) + str(nums.pop(1)))
+        if is_legit(target, nums, part2):
+            return True
+
+    return False
+
+
+def solve_parts(inputs, part2=False):
     res = 0
 
     for targ, nums in inputs:
-        for op_combs in product(ops, repeat=len(nums) - 1):
-            val = nums[0]
-            for n, o in zip(nums[1:], op_combs):
-                if o == "*":
-                    val *= n
-                elif o == "+":
-                    val += n
-                else:
-                    val = int(str(val) + str(n))
-            if val == targ:
-                res += targ
-                break
+        if is_legit(targ, nums, part2):
+            res += targ
 
     return res
 
