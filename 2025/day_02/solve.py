@@ -41,7 +41,7 @@ def check_invalids(first, last, splits, invalid_ids):
             invalid_ids.add(cur_num_int)
 
         first_half_int += 1
-        cur_num = str(first_half_int)*splits
+        cur_num = str(first_half_int) * splits
 
 
 def solve_part_01(ranges: list[str]) -> int:
