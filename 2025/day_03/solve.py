@@ -25,7 +25,6 @@ def solve_battery_settings(lines, required_batteries) -> int:
                 cur_idx = np.argmax(jolts)
 
             digits.append(str(jolts[cur_idx]))
-            jolts[cur_idx] = -999
             jolts = jolts[cur_idx+1:]
 
         result += int(''.join(digits))
