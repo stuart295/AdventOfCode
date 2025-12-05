@@ -7,6 +7,15 @@ DAY = 5
 
 
 def solve(lines):
+    all_ingredients, fresh = parse_input(lines)
+
+    part1 = solve_part_01(all_ingredients, fresh)
+    part2 = solve_part_02(fresh)
+
+    return part1, part2
+
+
+def parse_input(lines):
     fresh = []
     all_ingredients = []
 
@@ -20,12 +29,7 @@ def solve(lines):
             all_ingredients.append(int(line))
         else:
             fresh.append([int(x) for x in line.split("-")])
-
-    part1 = solve_part_01(all_ingredients, fresh)
-
-    part2 = solve_part_02(fresh)
-
-    return part1, part2
+    return all_ingredients, fresh
 
 
 def is_overlapping(s1, e1, s2, e2):
@@ -43,6 +47,7 @@ def is_overlapping(s1, e1, s2, e2):
 
     return False
 
+
 def merge_ranges(ranges):
     merged = list(ranges)
 
@@ -52,30 +57,26 @@ def merge_ranges(ranges):
 
         cur_start, cur_end = merged[idx]
         was_merged = False
-        for other_idx, (other_start, other_end) in enumerate(merged[idx+1:]):
+        for other_idx, (other_start, other_end) in enumerate(merged[idx + 1:]):
             if is_overlapping(cur_start, cur_end, other_start, other_end):
                 new_range = [min(cur_start, other_start), max(cur_end, other_end)]
-                merged.pop(idx+1+other_idx)
+                merged.pop(idx + 1 + other_idx)
                 merged[idx] = new_range
                 was_merged = True
                 break
 
         if not was_merged:
-            idx+=1
+            idx += 1
 
     return merged
 
 
 def solve_part_02(fresh) -> int:
-    prev = []
-    ranges_merged = list(fresh)
-    while len(ranges_merged) != len(prev):
-        prev = list(ranges_merged)
-        ranges_merged = merge_ranges(prev)
+    ranges_merged = merge_ranges(fresh)
 
     result = 0
     for start, end in ranges_merged:
-        result += (end+1)-start
+        result += (end + 1) - start
 
     return result
 
